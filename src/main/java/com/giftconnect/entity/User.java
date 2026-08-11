@@ -1,6 +1,8 @@
 package com.giftconnect.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -34,9 +36,9 @@ public class User {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @JsonIgnore // never send the password back out in an API response
-    @Column(name = "password", nullable = false)
-    private String password;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+@Column(name = "password", nullable = false)
+private String password;
 
     @Column(name = "phone")
     private String phone;

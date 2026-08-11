@@ -168,6 +168,74 @@ a {
     font-size: 0.95rem;
 }
 
+/* ===== Auth Section ===== */
+.auth-section {
+    max-width: 1100px;
+    margin: 2rem auto 4rem;
+    padding: 0 1.5rem;
+}
+
+.auth-forms {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+}
+
+.auth-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+.auth-card h2 {
+    margin-bottom: 1.25rem;
+    font-size: 1.3rem;
+}
+
+.auth-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.auth-card input {
+    padding: 0.7rem 0.9rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.auth-card input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.auth-card .btn-primary {
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95rem;
+    margin-top: 0.25rem;
+}
+
+.form-message {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    min-height: 1.2em;
+}
+
+.form-message.success {
+    color: #2a8f4a;
+}
+
+.form-message.error {
+    color: #d33;
+}
+
 /* ===== Footer ===== */
 .footer {
     background: var(--text-dark);

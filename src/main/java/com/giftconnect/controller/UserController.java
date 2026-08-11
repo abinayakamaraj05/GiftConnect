@@ -1,8 +1,6 @@
 package com.giftconnect.controller;
 
-import com.giftconnect.entity.User;
 import com.giftconnect.service.UserService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,10 +10,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import com.giftconnect.entity.User;
+
 /**
- * REST endpoints for user registration and lookup.
+ * REST endpoints for user lookup.
  *
- * POST /api/users/register  -> create a new user
+ * Registration and login moved to AuthController (/api/auth/register, /api/auth/login)
+ * as of Week 1 — Authentication, so there's a single source of truth for account creation.
+ *
  * GET  /api/users            -> list all users
  * GET  /api/users/{id}       -> get one user by id
  */
@@ -28,18 +30,6 @@ public class UserController {
     @Autowired
     public UserController(UserService userService) {
         this.userService = userService;
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody User user) {
-        try {
-            User savedUser = userService.registerUser(user);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
-        } catch (IllegalStateException e) {
-            // Duplicate email
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", e.getMessage()));
-        }
     }
 
     @GetMapping

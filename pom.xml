@@ -47,6 +47,18 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!--
+            Password hashing only (BCryptPasswordEncoder).
+            Deliberately using spring-security-crypto instead of spring-boot-starter-security:
+            the full starter auto-secures every endpoint with HTTP Basic login, which would
+            fight with our own simple session-based AuthFilter. This gives us just the hashing
+            utility with no side effects on routing/security config.
+        -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
         <!-- Testing support (JUnit, Mockito, etc.) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
