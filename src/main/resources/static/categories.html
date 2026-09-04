@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories | GiftConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header class="app-navbar">
+        <div class="app-nav-container">
+            <a href="dashboard.html" class="logo">Gift<span>Connect</span></a>
+            <ul class="app-nav-links">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="categories.html" class="active">Categories</a></li>
+                <li><a href="products.html">Products</a></li>
+            </ul>
+            <div class="app-nav-user">
+                <span id="currentUserEmail">…</span>
+                <button class="btn-small delete" id="navLogoutBtn">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <div class="page-header">
+            <h1>Categories</h1>
+            <button class="btn-primary" id="openAddCategoryBtn" style="border:none; cursor:pointer;">
+                + Add Category
+            </button>
+        </div>
+
+        <div class="toolbar">
+            <input type="text" id="categorySearchInput" placeholder="Search categories by name...">
+            <button class="btn-small edit" id="categorySearchBtn">Search</button>
+            <button class="btn-small" id="categoryClearBtn">Clear</button>
+        </div>
+
+        <div id="categoryTableWrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="categoryTableBody">
+                    <!-- rows injected by categories.js -->
+                </tbody>
+            </table>
+            <div class="empty-state" id="categoryEmptyState" style="display:none;">
+                No categories found.
+            </div>
+        </div>
+    </main>
+
+    <!-- Add / Edit Category Modal -->
+    <div class="modal-overlay" id="categoryModal">
+        <div class="modal-box">
+            <h2 id="categoryModalTitle">Add Category</h2>
+            <form id="categoryForm">
+                <input type="hidden" id="categoryId">
+                <input type="text" id="categoryName" placeholder="Category name" required>
+                <textarea id="categoryDescription" placeholder="Description" rows="3"></textarea>
+                <p class="form-message" id="categoryFormMessage"></p>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancelCategoryBtn">Cancel</button>
+                    <button type="submit" class="btn-primary" style="border:none; cursor:pointer;">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 GiftConnect. Built as a college capstone project.</p>
+    </footer>
+
+    <script src="js/auth-guard.js"></script>
+    <script src="js/categories.js"></script>
+</body>
+</html>

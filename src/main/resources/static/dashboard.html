@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | GiftConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header class="app-navbar">
+        <div class="app-nav-container">
+            <a href="dashboard.html" class="logo">Gift<span>Connect</span></a>
+            <ul class="app-nav-links">
+                <li><a href="dashboard.html" class="active">Dashboard</a></li>
+                <li><a href="categories.html">Categories</a></li>
+                <li><a href="products.html">Products</a></li>
+            </ul>
+            <div class="app-nav-user">
+                <span id="currentUserEmail">…</span>
+                <button class="btn-small delete" id="navLogoutBtn">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <div class="page-header">
+            <h1>Dashboard</h1>
+        </div>
+        <p style="color: var(--text-light);">
+            Manage your gift categories and product catalog from here.
+        </p>
+
+        <div class="dashboard-tiles">
+            <div class="dashboard-tile">
+                <h3>🏷️ Categories</h3>
+                <p>Add, edit, and organize gift categories like Birthday, Wedding, and Flowers.</p>
+                <a href="categories.html" class="btn-primary">Manage Categories</a>
+            </div>
+            <div class="dashboard-tile">
+                <h3>🎁 Products</h3>
+                <p>Add products, set prices and stock, and assign them to a category.</p>
+                <a href="products.html" class="btn-primary">Manage Products</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 GiftConnect. Built as a college capstone project.</p>
+    </footer>
+
+    <script src="js/auth-guard.js"></script>
+</body>
+</html>

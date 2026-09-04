@@ -1,22 +1,12 @@
 package com.giftconnect.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 import java.time.LocalDateTime;
 
-/**
- * Maps to the existing "users" table in the loved_ones_gifting database.
- *
- * NOTE: This entity does NOT create or alter the table structure beyond
- * what's already defined in database/schema.sql. spring.jpa.hibernate.ddl-auto=update
- * will only add missing columns if the field names/types don't line up —
- * it will not drop or recreate anything.
- */
 @Entity
 @Table(name = "users")
 public class User {
@@ -24,7 +14,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    private Long userId;
+    private Integer userId;
 
     @NotBlank(message = "Name is required")
     @Column(name = "name", nullable = false)
@@ -36,9 +26,9 @@ public class User {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-@Column(name = "password", nullable = false)
-private String password;
+    @JsonIgnore
+    @Column(name = "password", nullable = false)
+    private String password;
 
     @Column(name = "phone")
     private String phone;
@@ -50,7 +40,6 @@ private String password;
     private LocalDateTime createdAt;
 
     public User() {
-        // Required no-arg constructor for JPA
     }
 
     @PrePersist
@@ -58,13 +47,11 @@ private String password;
         this.createdAt = LocalDateTime.now();
     }
 
-    // ----- Getters and setters -----
-
-    public Long getUserId() {
+    public Integer getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(Integer userId) {
         this.userId = userId;
     }
 

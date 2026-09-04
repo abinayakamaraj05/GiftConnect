@@ -32,6 +32,9 @@ public class AuthFilter extends OncePerRequestFilter {
     private static final List<String> PUBLIC_PATHS = List.of(
             "/",
             "/index.html",
+            "/dashboard.html",
+            "/categories.html",
+            "/products.html",
             "/css/",
             "/js/",
             "/api/auth/register",

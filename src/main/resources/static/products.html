@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products | GiftConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header class="app-navbar">
+        <div class="app-nav-container">
+            <a href="dashboard.html" class="logo">Gift<span>Connect</span></a>
+            <ul class="app-nav-links">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="categories.html">Categories</a></li>
+                <li><a href="products.html" class="active">Products</a></li>
+            </ul>
+            <div class="app-nav-user">
+                <span id="currentUserEmail">…</span>
+                <button class="btn-small delete" id="navLogoutBtn">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <div class="page-header">
+            <h1>Products</h1>
+            <button class="btn-primary" id="openAddProductBtn" style="border:none; cursor:pointer;">
+                + Add Product
+            </button>
+        </div>
+
+        <div class="toolbar">
+            <input type="text" id="productSearchInput" placeholder="Search products by name...">
+            <button class="btn-small edit" id="productSearchBtn">Search</button>
+            <select id="categoryFilterSelect">
+                <option value="">All categories</option>
+            </select>
+            <button class="btn-small" id="productClearBtn">Clear</button>
+        </div>
+
+        <div id="productTableWrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="productTableBody">
+                    <!-- rows injected by products.js -->
+                </tbody>
+            </table>
+            <div class="empty-state" id="productEmptyState" style="display:none;">
+                No products found.
+            </div>
+        </div>
+    </main>
+
+    <!-- Add / Edit Product Modal -->
+    <div class="modal-overlay" id="productModal">
+        <div class="modal-box">
+            <h2 id="productModalTitle">Add Product</h2>
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                <input type="text" id="productName" placeholder="Product name" required>
+                <textarea id="productDescription" placeholder="Description" rows="3"></textarea>
+                <input type="number" id="productPrice" placeholder="Price" step="0.01" min="0" required>
+                <input type="number" id="productStock" placeholder="Stock quantity" min="0" required>
+                <select id="productCategory" required>
+                    <option value="">Select a category</option>
+                </select>
+                <input type="text" id="productImageUrl" placeholder="Image URL (optional)">
+                <select id="productStatus">
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                </select>
+                <p class="form-message" id="productFormMessage"></p>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancelProductBtn">Cancel</button>
+                    <button type="submit" class="btn-primary" style="border:none; cursor:pointer;">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 GiftConnect. Built as a college capstone project.</p>
+    </footer>
+
+    <script src="js/auth-guard.js"></script>
+    <script src="js/products.js"></script>
+</body>
+</html>

@@ -40,10 +40,14 @@ function initAuth() {
         authForms.style.display = 'grid';
     }
 
-    // Check current session on page load
+    // Check current session on page load.
+    // If already logged in, send the user straight to the dashboard.
     fetch('/api/auth/me', { credentials: 'include' })
         .then(res => res.ok ? res.json() : Promise.reject())
-        .then(showLoggedInState)
+        .then(user => {
+            showLoggedInState(user);
+            window.location.href = 'dashboard.html';
+        })
         .catch(showLoggedOutState);
 
     // Login
@@ -72,6 +76,7 @@ function initAuth() {
 
             loginForm.reset();
             showLoggedInState({ email: data.email });
+            window.location.href = 'dashboard.html';
         } catch (err) {
             loginMessage.textContent = 'Network error — is the server running?';
             loginMessage.classList.add('error');
