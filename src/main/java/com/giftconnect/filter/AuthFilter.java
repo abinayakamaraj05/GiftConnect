@@ -39,7 +39,8 @@ public class AuthFilter extends OncePerRequestFilter {
             "/js/",
             "/api/auth/register",
             "/api/auth/login",
-            "/api/users" // Day 1 lookup endpoints stay public for now
+            "/api/users",  // exact: GET /api/users
+            "/api/users/"  // prefix: GET /api/users/{id}
     );
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -70,8 +71,15 @@ public class AuthFilter extends OncePerRequestFilter {
     }
 
     private boolean isPublicPath(String path) {
-        return PUBLIC_PATHS.stream().anyMatch(publicPath ->
-                path.equals(publicPath) || path.startsWith(publicPath.endsWith("/") ? publicPath : publicPath + "/")
-        );
+        return PUBLIC_PATHS.stream().anyMatch(publicPath -> {
+            // Exact match always counts (this is the only way "/" can match).
+            if (path.equals(publicPath)) {
+                return true;
+            }
+            // Prefix entries are ONLY the ones written with a trailing slash
+            // (e.g. "/css/", "/js/"). Without this guard, the "/" entry would
+            // prefix-match every path in the app and make nothing protected.
+            return publicPath.endsWith("/") && !publicPath.equals("/") && path.startsWith(publicPath);
+        });
     }
 }
