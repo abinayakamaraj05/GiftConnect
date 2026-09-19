@@ -31,6 +31,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Covers Order/Payment business-rule violations: insufficient stock,
+     * invalid quantity, invalid status value, cancelling a delivered order, etc.
+     */
+    @ExceptionHandler(InvalidOperationException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidOperation(InvalidOperationException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
+    }
+
+    /**
      * Triggered by @Valid failing on a @NotBlank / @NotNull / @DecimalMin field.
      * Returns a map of fieldName -> message so the frontend can highlight
      * exactly which field was invalid.

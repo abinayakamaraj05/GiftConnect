@@ -1,6 +1,7 @@
 package com.giftconnect.dto;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -19,10 +20,12 @@ public class ProductRequest {
     private String description;
 
     @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.0", inclusive = true, message = "Price cannot be negative")
+    // inclusive = false means the value must be strictly greater than 0
+    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
     private BigDecimal price;
 
     @NotNull(message = "Stock is required")
+    @Min(value = 0, message = "Stock cannot be negative")
     private Integer stock;
 
     @NotNull(message = "categoryId is required")

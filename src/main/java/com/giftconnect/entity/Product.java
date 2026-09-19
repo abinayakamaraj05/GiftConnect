@@ -2,6 +2,7 @@ package com.giftconnect.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -28,11 +29,12 @@ public class Product {
     private String description;
 
     @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.0", inclusive = true, message = "Price cannot be negative")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
     @NotNull(message = "Stock is required")
+    @Min(value = 0, message = "Stock cannot be negative")
     @Column(name = "stock", nullable = false)
     private Integer stock;
 

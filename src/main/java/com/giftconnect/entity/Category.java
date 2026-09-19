@@ -3,6 +3,11 @@ package com.giftconnect.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ * Maps to the "categories" table. A category groups products
+ * (e.g. Birthday, Anniversary, Flowers) and is referenced by
+ * Product via a foreign key (category_id).
+ */
 @Entity
 @Table(name = "categories")
 public class Category {
@@ -10,10 +15,10 @@ public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
-    private Integer categoryId;
+    private Long categoryId;
 
     @NotBlank(message = "Category name is required")
-    @Column(name = "category_name", nullable = false,  length = 100)
+    @Column(name = "category_name", nullable = false, unique = true, length = 100)
     private String categoryName;
 
     @Column(name = "description", length = 500)
@@ -27,11 +32,13 @@ public class Category {
         this.description = description;
     }
 
-    public Integer getCategoryId() {
+    // ----- Getters and setters -----
+
+    public Long getCategoryId() {
         return categoryId;
     }
 
-    public void setCategoryId(Integer categoryId) {
+    public void setCategoryId(Long categoryId) {
         this.categoryId = categoryId;
     }
 
