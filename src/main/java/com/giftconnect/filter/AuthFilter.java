@@ -21,11 +21,11 @@ import java.util.Map;
  * PUBLIC_PATHS bypass the check entirely (landing page, static assets,
  * and the auth endpoints themselves — you can't require a session to log in).
  *
- * Everything else currently used by the app (GET /api/users, /api/users/{id})
- * is also left public for now, since Week 1 only asks us to protect FUTURE
- * authenticated endpoints, not rework existing Day 1 behavior. To protect a
- * new endpoint later, simply don't add its path to PUBLIC_PATHS — the filter
- * will require a valid session automatically.
+ * Everything else requires a valid session. GET /api/users and GET /api/users/{id}
+ * used to be public during Week 1 and were removed from this allowlist because they
+ * expose user data, so user lookup now needs a logged-in session. To protect a new
+ * endpoint later, simply don't add its path to PUBLIC_PATHS — the filter will
+ * require a valid session automatically.
  *
  * For every authenticated request the filter also resolves the caller's role from
  * the server-side HTTP session and exposes it as the REQUEST_USER_ROLE request
@@ -46,9 +46,9 @@ public class AuthFilter extends OncePerRequestFilter {
             "/css/",
             "/js/",
             "/api/auth/register",
-            "/api/auth/login",
-            "/api/users",  // exact: GET /api/users
-            "/api/users/"  // prefix: GET /api/users/{id}
+            "/api/auth/login"
+            // NOTE: "/api/users" and "/api/users/{id}" were deliberately removed —
+            // both now require an authenticated session because they expose user data.
     );
 
     /**
