@@ -10,7 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import com.giftconnect.entity.Role;
 import com.giftconnect.entity.User;
+import com.giftconnect.filter.AuthFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * REST endpoints for user lookup.
@@ -18,8 +22,8 @@ import com.giftconnect.entity.User;
  * Registration and login moved to AuthController (/api/auth/register, /api/auth/login)
  * as of Week 1 — Authentication, so there's a single source of truth for account creation.
  *
- * GET  /api/users            -> list all users
- * GET  /api/users/{id}       -> get one user by id
+ * GET  /api/users            -> list all users (ADMIN only)
+ * GET  /api/users/{id}       -> get one user by id (ADMIN: any user; CUSTOMER/SELLER: own record only)
  */
 @RestController
 @RequestMapping("/api/users")
@@ -32,13 +36,29 @@ public class UserController {
         this.userService = userService;
     }
 
+    /**
+     * ADMIN only — a non-admin must not be able to list every account.
+     */
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
+    public ResponseEntity<?> getAllUsers(HttpServletRequest request) {
+        if (roleOf(request) != Role.ADMIN) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Only an ADMIN can list all users"));
+        }
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
+    /**
+     * ADMIN can view anyone. CUSTOMER/SELLER may only view their own record —
+     * any other user's id is rejected with 403.
+     */
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+    public ResponseEntity<?> getUserById(@PathVariable Long id, HttpServletRequest request) {
+        if (roleOf(request) != Role.ADMIN && !id.equals(currentUserId(request))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "You can only view your own user record"));
+        }
+
         try {
             User user = userService.getUserById(id);
             return ResponseEntity.ok(user);
@@ -46,5 +66,29 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", e.getMessage()));
         }
+    }
+
+    /**
+     * Role the AuthFilter resolved from the server-side session — never from a request
+     * parameter, header, body, or client-provided data. Falls back to CUSTOMER, the least
+     * privileged role, so a missing/unknown role can never grant extra access.
+     */
+    private Role roleOf(HttpServletRequest request) {
+        Object role = request.getAttribute(AuthFilter.REQUEST_USER_ROLE);
+        return role instanceof Role r ? r : Role.CUSTOMER;
+    }
+
+    /**
+     * The authenticated caller's own user ID, read from the existing HTTP session only.
+     * AuthFilter guarantees the session is authenticated before these endpoints run.
+     */
+    private Long currentUserId(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return null;
+        }
+
+        Object id = session.getAttribute(AuthController.SESSION_USER_ID);
+        return id instanceof Number n ? n.longValue() : null;
     }
 }
