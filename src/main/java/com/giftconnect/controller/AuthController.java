@@ -1,5 +1,6 @@
 package com.giftconnect.controller;
 
+import com.giftconnect.entity.Role;
 import com.giftconnect.entity.User;
 import com.giftconnect.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,7 +19,7 @@ import java.util.Optional;
  * Handles registration, login, session check, and logout.
  *
  * Session-based auth, kept intentionally simple for a college MVP:
- * - On successful login we store userId + email in HttpSession.
+ * - On successful login we store userId + email + role in HttpSession.
  * - AuthFilter checks for that session on protected requests.
  * - No JWT, no OAuth, no Spring Security filter chain.
  */
@@ -29,6 +30,8 @@ public class AuthController {
     // Session attribute keys — used here and read by AuthFilter
     public static final String SESSION_USER_ID = "userId";
     public static final String SESSION_USER_EMAIL = "userEmail";
+    // Role is always the one loaded from the DB at login — never taken from the request body.
+    public static final String SESSION_USER_ROLE = "userRole";
 
     private final UserService userService;
 
@@ -61,15 +64,19 @@ public class AuthController {
         User user = matchedUser.get();
 
         // Create a new session (or reuse the current one) and store identity in it.
+        // The role comes from the authenticated User loaded by the backend — the login
+        // request body has no role field, and any role sent by the client is ignored.
         HttpSession session = httpRequest.getSession(true);
         session.setAttribute(SESSION_USER_ID, user.getUserId());
         session.setAttribute(SESSION_USER_EMAIL, user.getEmail());
+        session.setAttribute(SESSION_USER_ROLE, user.getRole());
 
         return ResponseEntity.ok(Map.of(
                 "message", "Login successful",
                 "userId", user.getUserId(),
                 "name", user.getName(),
-                "email", user.getEmail()
+                "email", user.getEmail(),
+                "role", user.getRole()
         ));
     }
 
@@ -83,9 +90,19 @@ public class AuthController {
                     .body(Map.of("error", "Not logged in"));
         }
 
+        // Role is the value stored at login from the authenticated User object (never from
+        // a request parameter or frontend data). A session created before roles existed
+        // has no role stored yet, so fall back to the entity default instead of failing —
+        // Map.of() rejects null values.
+        Object role = session.getAttribute(SESSION_USER_ROLE);
+        if (role == null) {
+            role = Role.CUSTOMER;
+        }
+
         return ResponseEntity.ok(Map.of(
                 "userId", session.getAttribute(SESSION_USER_ID),
-                "email", session.getAttribute(SESSION_USER_EMAIL)
+                "email", session.getAttribute(SESSION_USER_EMAIL),
+                "role", role
         ));
     }
 
