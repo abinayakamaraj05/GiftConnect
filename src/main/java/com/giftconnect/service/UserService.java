@@ -1,5 +1,6 @@
 package com.giftconnect.service;
 
+import com.giftconnect.entity.Role;
 import com.giftconnect.entity.User;
 import com.giftconnect.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,12 @@ public class UserService {
      * Registers a new user after checking that the email isn't already taken.
      * The plaintext password is hashed with BCrypt before it's ever saved —
      * the raw password is never persisted or logged.
+     *
+     * Public self-registration ALWAYS creates a CUSTOMER. Any role supplied in
+     * the request body is ignored and overwritten here, so a client can never
+     * self-register as SELLER or ADMIN. Privileged accounts must be created
+     * through a separate, trusted (non-public) path.
+     *
      * Throws IllegalStateException if the email is a duplicate — the controller
      * catches this and returns HTTP 409 Conflict.
      */
@@ -37,6 +44,7 @@ public class UserService {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new IllegalStateException("Email already registered: " + user.getEmail());
         }
+        user.setRole(Role.CUSTOMER);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }

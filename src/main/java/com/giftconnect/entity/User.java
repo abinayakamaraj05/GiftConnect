@@ -7,14 +7,6 @@ import jakarta.validation.constraints.NotBlank;
 
 import java.time.LocalDateTime;
 
-/**
- * Maps to the existing "users" table in the loved_ones_gifting database.
- *
- * NOTE: This entity does NOT create or alter the table structure beyond
- * what's already defined in database/schema.sql. spring.jpa.hibernate.ddl-auto=update
- * will only add missing columns if the field names/types don't line up —
- * it will not drop or recreate anything.
- */
 @Entity
 @Table(name = "users")
 public class User {
@@ -34,7 +26,7 @@ public class User {
     private String email;
 
     @NotBlank(message = "Password is required")
-   @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // accept password in requests, never return it
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "password", nullable = false)
     private String password;
 
@@ -47,6 +39,10 @@ public class User {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private Role role = Role.CUSTOMER;
+
     public User() {
         // Required no-arg constructor for JPA
     }
@@ -54,9 +50,11 @@ public class User {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-    }
 
-    // ----- Getters and setters -----
+        if (this.role == null) {
+            this.role = Role.CUSTOMER;
+        }
+    }
 
     public Long getUserId() {
         return userId;
@@ -112,5 +110,13 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }
