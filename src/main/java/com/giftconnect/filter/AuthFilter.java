@@ -2,6 +2,7 @@ package com.giftconnect.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giftconnect.controller.AuthController;
+import com.giftconnect.entity.Role;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +26,13 @@ import java.util.Map;
  * authenticated endpoints, not rework existing Day 1 behavior. To protect a
  * new endpoint later, simply don't add its path to PUBLIC_PATHS — the filter
  * will require a valid session automatically.
+ *
+ * For every authenticated request the filter also resolves the caller's role from
+ * the server-side HTTP session and exposes it as the REQUEST_USER_ROLE request
+ * attribute, so downstream controllers/services can read it without touching the
+ * session themselves. The role is never read from a request parameter, body,
+ * header, or cookie. No role-based rules are enforced here — authentication only;
+ * CUSTOMER/SELLER/ADMIN authorization comes later.
  */
 @Component
 public class AuthFilter extends OncePerRequestFilter {
@@ -42,6 +50,14 @@ public class AuthFilter extends OncePerRequestFilter {
             "/api/users",  // exact: GET /api/users
             "/api/users/"  // prefix: GET /api/users/{id}
     );
+
+    /**
+     * Request attribute holding the authenticated caller's role, resolved from the
+     * HTTP session. Downstream controllers/services can read it via
+     * request.getAttribute(AuthFilter.REQUEST_USER_ROLE) instead of touching the
+     * session directly.
+     */
+    public static final String REQUEST_USER_ROLE = "authenticatedRole";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -67,7 +83,28 @@ public class AuthFilter extends OncePerRequestFilter {
             return;
         }
 
+        // Expose the authenticated caller's role to downstream controllers/services.
+        // It is read ONLY from the server-side HTTP session (AuthController stored it
+        // at login) — never from a request parameter, body, header, or cookie.
+        request.setAttribute(REQUEST_USER_ROLE, resolveRole(session));
+
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Reads the role AuthController stored in the session at login.
+     *
+     * A session created before roles existed (or holding anything unexpected) has no
+     * usable role, so it safely falls back to Role.CUSTOMER — the same default the
+     * User entity uses. No privilege is gained either way: the value only comes from
+     * the session, so a client cannot promote itself by sending a role of its own.
+     */
+    private Role resolveRole(HttpSession session) {
+        Object sessionRole = session.getAttribute(AuthController.SESSION_USER_ROLE);
+        if (sessionRole instanceof Role role) {
+            return role;
+        }
+        return Role.CUSTOMER;
     }
 
     private boolean isPublicPath(String path) {
