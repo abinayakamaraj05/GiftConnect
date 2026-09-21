@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Products | GiftConnect</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/cart.css">
 </head>
 <body>
 
@@ -16,6 +17,7 @@
                 <li><a href="categories.html">Categories</a></li>
                 <li><a href="products.html" class="active">Products</a></li>
                 <li><a href="orders.html">Orders</a></li>
+                <li><a href="cart.html">Cart<span class="cart-count" id="cartCount"></span></a></li>
             </ul>
             <div class="app-nav-user">
                 <span id="currentUserEmail">…</span>
@@ -27,7 +29,8 @@
     <main class="app-main">
         <div class="page-header">
             <h1>Products</h1>
-            <button class="btn-primary" id="openAddProductBtn" style="border:none; cursor:pointer;">
+            <!-- Shown by products.js only for SELLER / ADMIN accounts -->
+            <button class="btn-primary" id="openAddProductBtn" style="border:none; cursor:pointer; display:none;">
                 + Add Product
             </button>
         </div>
@@ -41,25 +44,37 @@
             <button class="btn-small" id="productClearBtn">Clear</button>
         </div>
 
-        <div id="productTableWrapper">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Price</th>
-                        <th>Stock</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="productTableBody">
-                    <!-- rows injected by products.js -->
-                </tbody>
-            </table>
-            <div class="empty-state" id="productEmptyState" style="display:none;">
-                No products found.
+        <h2 class="section-heading">Browse products</h2>
+        <div id="productCardGrid" class="product-grid">
+            <!-- product cards injected by products.js -->
+        </div>
+        <div class="empty-state" id="productCardsEmptyState" style="display:none;">
+            No products found.
+        </div>
+
+        <!-- Management table: hidden for CUSTOMER accounts, shown for SELLER / ADMIN by products.js -->
+        <div id="manageSection" style="display:none;">
+            <h2 class="section-heading" style="margin-top:2.5rem;">Manage products</h2>
+            <div id="productTableWrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTableBody">
+                        <!-- rows injected by products.js -->
+                    </tbody>
+                </table>
+                <div class="empty-state" id="productEmptyState" style="display:none;">
+                    No products found.
+                </div>
             </div>
         </div>
     </main>
@@ -91,11 +106,31 @@
         </div>
     </div>
 
+    <!-- Product Details Modal (customer "View Details") -->
+    <div class="modal-overlay" id="productDetailModal">
+        <div class="modal-box product-detail-box">
+            <img id="detailImage" class="product-detail-img" alt="Product image" style="display:none;">
+            <div class="product-img-placeholder product-detail-placeholder" id="detailPlaceholder" style="display:none;">🎁</div>
+            <div class="product-detail-body">
+                <span class="product-card-category" id="detailCategory"></span>
+                <h2 id="detailName" style="margin-bottom:0.25rem;"></h2>
+                <p class="product-detail-price" id="detailPrice"></p>
+                <p class="product-detail-desc" id="detailDescription"></p>
+                <p class="product-detail-stock" id="detailStock"></p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="closeProductDetailBtn">Close</button>
+                <button type="button" class="btn-primary" id="detailAddToCartBtn" style="border:none; cursor:pointer;">Add to Cart</button>
+            </div>
+        </div>
+    </div>
+
     <footer class="footer">
         <p>&copy; 2026 GiftConnect. Built as a college capstone project.</p>
     </footer>
 
     <script src="js/auth-guard.js"></script>
+    <script src="js/cart-common.js"></script>
     <script src="js/products.js"></script>
 </body>
 </html>

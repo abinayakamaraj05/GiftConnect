@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Cart | GiftConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/cart.css">
+</head>
+<body>
+
+    <header class="app-navbar">
+        <div class="app-nav-container">
+            <a href="dashboard.html" class="logo">Gift<span>Connect</span></a>
+            <ul class="app-nav-links">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="categories.html">Categories</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="orders.html">Orders</a></li>
+                <li><a href="cart.html" class="active">Cart<span class="cart-count" id="cartCount"></span></a></li>
+            </ul>
+            <div class="app-nav-user">
+                <span id="currentUserEmail">…</span>
+                <button class="btn-small delete" id="navLogoutBtn">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <div class="page-header">
+            <h1>Your cart</h1>
+        </div>
+
+        <div id="cartMessage" class="cart-notice" style="display:none;"></div>
+
+        <div id="cartContent" style="display:none;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Subtotal</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="cartTableBody">
+                    <!-- rows injected by cart.js -->
+                </tbody>
+            </table>
+
+            <div class="cart-summary">
+                <div>
+                    <div class="cart-total-label">Order total</div>
+                    <div class="cart-total" id="cartTotal">₹0.00</div>
+                </div>
+                <div class="cart-actions">
+                    <a href="products.html" class="btn-secondary link-btn">Continue shopping</a>
+                    <button type="button" class="btn-primary" id="checkoutBtn">Proceed to checkout</button>
+                </div>
+                <p class="cart-hint" id="cartHint" style="display:none;"></p>
+            </div>
+        </div>
+
+        <div class="empty-state" id="cartEmpty" style="display:none;">
+            Your cart is empty. <a href="products.html">Browse products</a> to add a gift.
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 GiftConnect. Built as a college capstone project.</p>
+    </footer>
+
+    <script src="js/auth-guard.js"></script>
+    <script src="js/cart-common.js"></script>
+    <script src="js/cart.js"></script>
+</body>
+</html>

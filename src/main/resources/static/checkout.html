@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | GiftConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/cart.css">
+</head>
+<body>
+
+    <header class="app-navbar">
+        <div class="app-nav-container">
+            <a href="dashboard.html" class="logo">Gift<span>Connect</span></a>
+            <ul class="app-nav-links">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="categories.html">Categories</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="orders.html">Orders</a></li>
+                <li><a href="cart.html">Cart<span class="cart-count" id="cartCount"></span></a></li>
+            </ul>
+            <div class="app-nav-user">
+                <span id="currentUserEmail">…</span>
+                <button class="btn-small delete" id="navLogoutBtn">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <div class="page-header">
+            <h1>Checkout</h1>
+        </div>
+
+        <div class="empty-state" id="checkoutEmpty" style="display:none;">
+            Your cart is empty. <a href="products.html">Browse products</a> to add a gift.
+        </div>
+
+        <div class="cart-notice error" id="checkoutProblem" style="display:none;">
+            Some items in your cart are unavailable or no longer in stock in the quantity you chose.
+            <a href="cart.html">Go back to your cart</a> to fix them.
+        </div>
+
+        <div class="cart-notice error" id="checkoutLoadError" style="display:none;"></div>
+
+        <div id="checkoutLayout" style="display:none;">
+            <form id="checkoutForm" novalidate>
+
+                <section class="checkout-section">
+                    <h2>1. Delivery address</h2>
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="fullName">Recipient full name</label>
+                            <input type="text" id="fullName" maxlength="100" autocomplete="name">
+                        </div>
+                        <div class="field">
+                            <label for="phone">Phone number (10 digits)</label>
+                            <input type="tel" id="phone" maxlength="14" inputmode="numeric" autocomplete="tel">
+                        </div>
+                        <div class="field full">
+                            <label for="addressLine">Address</label>
+                            <input type="text" id="addressLine" maxlength="200" placeholder="House / flat no., street, area" autocomplete="street-address">
+                        </div>
+                        <div class="field">
+                            <label for="city">City</label>
+                            <input type="text" id="city" maxlength="60" autocomplete="address-level2">
+                        </div>
+                        <div class="field">
+                            <label for="state">State</label>
+                            <input type="text" id="state" maxlength="60" autocomplete="address-level1">
+                        </div>
+                        <div class="field">
+                            <label for="pinCode">PIN code</label>
+                            <input type="text" id="pinCode" maxlength="6" inputmode="numeric" autocomplete="postal-code">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="checkout-section">
+                    <h2>2. Review your order</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Product</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr>
+                        </thead>
+                        <tbody id="reviewTableBody"></tbody>
+                    </table>
+                    <p class="review-total">Total: <span id="reviewTotal">₹0.00</span></p>
+                </section>
+
+                <section class="checkout-section">
+                    <h2>3. Payment method</h2>
+                    <div class="payment-options">
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="UPI" checked> UPI
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="CARD"> Card
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="COD"> Cash on delivery
+                        </label>
+                    </div>
+                    <label class="demo-option">
+                        <input type="checkbox" id="simulateFailure"> Simulate a failed payment (demo only)
+                    </label>
+                </section>
+
+                <div class="cart-notice error" id="checkoutMessage" style="display:none;" role="alert"></div>
+
+                <div class="cart-actions">
+                    <a href="cart.html" class="btn-secondary link-btn">Back to cart</a>
+                    <button type="submit" class="btn-primary place-order-btn" id="placeOrderBtn">Place order</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="orderConfirmation" style="display:none;"></div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 GiftConnect. Built as a college capstone project.</p>
+    </footer>
+
+    <script src="js/auth-guard.js"></script>
+    <script src="js/cart-common.js"></script>
+    <script src="js/checkout.js"></script>
+</body>
+</html>
