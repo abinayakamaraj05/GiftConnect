@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const tableBody = document.getElementById('categoryTableBody');
     const emptyState = document.getElementById('categoryEmptyState');
     const modal = document.getElementById('categoryModal');
@@ -9,6 +9,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const nameField = document.getElementById('categoryName');
     const descField = document.getElementById('categoryDescription');
     const searchInput = document.getElementById('categorySearchInput');
+
+    // Category mutation is ADMIN-only on the server (AccessControl.requireAdmin
+    // in CategoryController). Hiding the controls for others is cosmetic only.
+    // Phase 2: anonymous visitors may browse, so a failed /api/auth/me simply
+    // means "not an admin" rather than a redirect.
+    let canManage = false;
+    try {
+        const me = await apiRequest('/api/auth/me');
+        canManage = me.role === 'ADMIN';
+    } catch (err) {
+        canManage = false;
+    }
+    if (!canManage) {
+        const addBtn = document.getElementById('openAddCategoryBtn');
+        if (addBtn) addBtn.style.display = 'none';
+    }
 
     function openModal(category = null) {
         formMessage.textContent = '';
@@ -36,13 +52,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         categories.forEach(cat => {
             const row = document.createElement('tr');
+            const manageButtons = canManage
+                ? `<button class="btn-small edit" data-action="edit" data-id="${cat.categoryId}">Edit</button>
+                   <button class="btn-small delete" data-action="delete" data-id="${cat.categoryId}">Delete</button>`
+                : '';
             row.innerHTML = `
                 <td>${cat.categoryId}</td>
                 <td>${escapeHtml(cat.categoryName)}</td>
                 <td>${escapeHtml(cat.description || '')}</td>
                 <td>
-                    <button class="btn-small edit" data-action="edit" data-id="${cat.categoryId}">Edit</button>
-                    <button class="btn-small delete" data-action="delete" data-id="${cat.categoryId}">Delete</button>
+                    <button class="btn-small view" data-action="view-products" data-id="${cat.categoryId}">View products</button>
+                    ${manageButtons}
                 </td>
             `;
             tableBody.appendChild(row);
@@ -94,6 +114,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = e.target.closest('button');
         if (!btn) return;
         const id = btn.dataset.id;
+
+        if (btn.dataset.action === 'view-products') {
+            window.location.href = 'products.html?category=' + encodeURIComponent(id);
+            return;
+        }
 
         if (btn.dataset.action === 'edit') {
             const category = currentCategories.find(c => String(c.categoryId) === id);

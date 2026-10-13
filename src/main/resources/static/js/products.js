@@ -34,9 +34,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentProducts = [];
     let categories = [];
 
+    // The full list returned by GET /api/products for the current user:
+    //   ADMIN              -> every product
+    //   SELLER             -> only their OWN products (server-scoped, Phase 3)
+    //   CUSTOMER/anonymous -> the ACTIVE public catalog
+    // For SELLERs, search/filter run client-side against this list so the
+    // management table can never display another seller's product.
+    let masterProducts = [];
+
     // Set in init() once /api/auth/me has answered. Until then the page assumes the
     // least-privileged view (customer), so management controls never flash on screen.
     let isCustomer = true;
+    // ADMIN and SELLER both get the management controls. The server independently
+    // enforces ownership (AccessControl) — this is a display choice only.
+    let canManage = false;
+    let isSeller = false;
     let cart = null;
     let detailProduct = null;
 
@@ -116,7 +128,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function addToCart(product) {
-        if (!cart || !product) return;
+        if (!product) return;
+
+        // Anonymous visitors can browse but not buy — send them to log in rather
+        // than silently doing nothing.
+        if (!cart) {
+            CartUI.showToast('Please log in to add items to your cart.', true);
+            setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+            return;
+        }
 
         if (!canPurchase(product)) {
             CartUI.showToast('This product is not available right now.', true);
@@ -132,11 +152,14 @@ document.addEventListener('DOMContentLoaded', () => {
         CartUI.showToast(`Added "${product.productName}" to your cart.`);
     }
 
-    // Management-only controls are shown for SELLER / ADMIN, hidden for CUSTOMER.
-    // NOTE: this is a display choice only; the real permission checks belong on the server.
+    // Management-only controls are shown for ADMIN and SELLER, hidden for
+    // CUSTOMER and anonymous visitors.
+    // NOTE: this is a display choice only; the real permission check is on the
+    // server (AccessControl.requireSellerOrAdmin + per-product ownership in
+    // ProductService).
     function applyRoleView() {
-        document.getElementById('openAddProductBtn').style.display = isCustomer ? 'none' : '';
-        document.getElementById('manageSection').style.display = isCustomer ? 'none' : '';
+        document.getElementById('openAddProductBtn').style.display = canManage ? '' : 'none';
+        document.getElementById('manageSection').style.display = canManage ? '' : 'none';
     }
 
     function renderProducts(products) {
@@ -271,8 +294,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadProducts() {
         try {
-            currentProducts = await apiRequest('/api/products');
-            renderProducts(currentProducts);
+            masterProducts = await apiRequest('/api/products');
+            renderProducts(masterProducts);
         } catch (err) {
             alert('Failed to load products: ' + err.message);
         }
@@ -288,6 +311,16 @@ document.addEventListener('DOMContentLoaded', () => {
             loadProducts();
             return;
         }
+
+        // A SELLER's master list already contains only their own products, so
+        // filter it locally. The public /search endpoint would otherwise return
+        // other sellers' ACTIVE products, which the seller cannot manage.
+        if (isSeller) {
+            const needle = keyword.toLowerCase();
+            renderProducts(masterProducts.filter(p => p.productName.toLowerCase().includes(needle)));
+            return;
+        }
+
         try {
             const results = await apiRequest('/api/products/search?name=' + encodeURIComponent(keyword));
             renderProducts(results);
@@ -302,6 +335,13 @@ document.addEventListener('DOMContentLoaded', () => {
             loadProducts();
             return;
         }
+
+        // SELLER: filter their own master list locally (see search handler).
+        if (isSeller) {
+            renderProducts(masterProducts.filter(p => String(p.categoryId) === String(categoryId)));
+            return;
+        }
+
         try {
             const results = await apiRequest(`/api/products/category/${categoryId}`);
             renderProducts(results);
@@ -343,7 +383,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 await apiRequest(`/api/products/${id}`, { method: 'DELETE' });
                 loadProducts();
             } catch (err) {
-                alert('Delete failed: ' + err.message);
+                alert(err.status === 403
+                    ? 'You do not have permission to delete this product.'
+                    : 'Delete failed: ' + err.message);
             }
         }
     });
@@ -397,20 +439,28 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal();
             loadProducts();
         } catch (err) {
-            formMessage.textContent = err.message;
+            formMessage.textContent = err.status === 403
+                ? 'You do not have permission to save this product.'
+                : err.message;
             formMessage.classList.add('error');
         }
     });
 
     (async function init() {
-        // Who is logged in? (auth-guard.js already redirects to login when there is no session.)
+        // Who is logged in? Anonymous visitors are welcome here (Phase 2), so a
+        // failed /api/auth/me just means "browse as the least-privileged user".
         try {
             const me = await apiRequest('/api/auth/me');
             isCustomer = me.role === 'CUSTOMER';
+            isSeller = me.role === 'SELLER';
+            canManage = me.role === 'ADMIN' || me.role === 'SELLER';
             cart = CartStore.forUser(me.userId);
             CartUI.refreshBadge(cart);
         } catch (err) {
-            return;
+            isCustomer = true;
+            isSeller = false;
+            canManage = false;
+            cart = null;
         }
         applyRoleView();
 
@@ -418,13 +468,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // that category's products immediately.
         const presetCategory = new URLSearchParams(window.location.search).get('category');
         await loadCategories();
+
+        // Always fetch the master list first: a SELLER filters it locally, so a
+        // preset category (or any later search) has data to work with.
+        await loadProducts();
+
         const hasPreset = presetCategory !== null
             && Array.from(categoryFilterSelect.options).some(opt => opt.value === presetCategory);
         if (hasPreset) {
             categoryFilterSelect.value = presetCategory;
             await applyCategoryFilter(presetCategory);
-        } else {
-            await loadProducts();
         }
     })();
 });
