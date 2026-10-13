@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import com.giftconnect.dto.UserResponse;
 import com.giftconnect.entity.Role;
 import com.giftconnect.entity.User;
 import com.giftconnect.filter.AuthFilter;
@@ -24,6 +25,9 @@ import jakarta.servlet.http.HttpSession;
  *
  * GET  /api/users            -> list all users (ADMIN only)
  * GET  /api/users/{id}       -> get one user by id (ADMIN: any user; CUSTOMER/SELLER: own record only)
+ *
+ * Phase 5 security fix: both endpoints return the existing UserResponse DTO
+ * instead of the User entity, so password/OTP material can never be serialized.
  */
 @RestController
 @RequestMapping("/api/users")
@@ -45,7 +49,9 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Only an ADMIN can list all users"));
         }
-        return ResponseEntity.ok(userService.getAllUsers());
+        return ResponseEntity.ok(userService.getAllUsers().stream()
+                .map(UserResponse::fromEntity)
+                .toList());
     }
 
     /**
@@ -61,7 +67,7 @@ public class UserController {
 
         try {
             User user = userService.getUserById(id);
-            return ResponseEntity.ok(user);
+            return ResponseEntity.ok(UserResponse.fromEntity(user));
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", e.getMessage()));
