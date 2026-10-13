@@ -23,6 +23,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         return; // auth-guard.js already redirects to index.html on 401
     }
 
+    // "View All Orders" is a platform-wide ADMIN view; the server enforces this
+    // (GET /api/orders is ADMIN-only) — hiding it here only avoids a dead button.
+    const isAdmin = currentUser.role === 'ADMIN';
+    if (!isAdmin) {
+        const allBtn = document.getElementById('viewAllOrdersBtn');
+        if (allBtn) allBtn.style.display = 'none';
+    }
+
     try {
         products = await apiRequest('/api/products');
     } catch (err) {
@@ -155,10 +163,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
+            // No userId is sent: the server binds the order to the authenticated
+            // session user, so it cannot be forged here.
             await apiRequest('/api/orders', {
                 method: 'POST',
                 body: JSON.stringify({
-                    userId: currentUser.userId,
                     shippingAddress: shippingAddressField.value,
                     items
                 })
@@ -196,6 +205,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         const statusOptions = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED']
             .map(s => `<option value="${s}" ${s === order.status ? 'selected' : ''}>${s}</option>`).join('');
 
+        // Advancing fulfillment is an ADMIN-only operation (enforced server-side in
+        // OrderService). Non-admins don't get the control at all — this is purely a
+        // UI convenience, never the security boundary.
+        const statusControl = isAdmin ? `
+                <label>Status:</label>
+                <select id="statusSelect" ${locked ? 'disabled' : ''}
+                        style="padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
+                    ${statusOptions}
+                </select>
+                <button class="btn-small edit" id="updateStatusBtn" ${locked ? 'disabled' : ''}>Update</button>` : '';
+
         const paymentSection = order.paymentStatus === 'PAID'
             ? `<p style="color:#1c7c3c; font-weight:600;">✔ Payment received</p>`
             : locked ? '' : `
@@ -224,12 +244,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <p><strong>Total: ₹${Number(order.totalAmount).toFixed(2)}</strong></p>
 
             <div style="display:flex; gap:0.75rem; align-items:center; margin:1rem 0;">
-                <label>Status:</label>
-                <select id="statusSelect" ${locked ? 'disabled' : ''}
-                        style="padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
-                    ${statusOptions}
-                </select>
-                <button class="btn-small edit" id="updateStatusBtn" ${locked ? 'disabled' : ''}>Update</button>
+                ${statusControl}
                 <button class="btn-small delete" id="cancelOrderBtn" ${locked ? 'disabled' : ''}>Cancel Order</button>
             </div>
             <p class="form-message" id="statusMessage"></p>

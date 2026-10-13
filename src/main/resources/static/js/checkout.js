@@ -215,10 +215,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         //    created and the cart is left untouched so the customer can adjust it.
         let order;
         try {
+            // No userId is sent: the server binds the order to the authenticated
+            // session user, so it cannot be forged from the client.
             order = await apiRequest('/api/orders', {
                 method: 'POST',
                 body: JSON.stringify({
-                    userId: me.userId,
                     shippingAddress: composeAddress(values),
                     items: lines.map(l => ({
                         productId: l.product.productId,
