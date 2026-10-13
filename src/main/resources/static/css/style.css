@@ -515,3 +515,192 @@ a {
         font-size: 2rem;
     }
 }
+
+/* ===== Product browsing (customer view) ===== */
+.section-heading {
+    font-size: 1.15rem;
+    margin: 0.25rem 0 1rem;
+}
+
+.btn-small.view {
+    background: var(--bg-light);
+    color: var(--primary-dark);
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.product-card {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-4px);
+}
+
+.product-card-img-wrap {
+    height: 170px;
+    background: var(--bg-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.product-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.product-img-placeholder {
+    font-size: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.product-card-body {
+    padding: 1rem 1.1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    flex: 1;
+}
+
+.product-card-category {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.product-card-name {
+    font-size: 1.05rem;
+    line-height: 1.35;
+}
+
+.product-card-desc {
+    color: var(--text-light);
+    font-size: 0.88rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 4em;
+}
+
+.product-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: auto;
+    margin-bottom: 0.75rem;
+}
+
+.product-card-price {
+    font-weight: 700;
+    color: var(--text-dark);
+    font-size: 1.05rem;
+}
+
+.product-details-btn {
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.65rem 1rem;
+    text-align: center;
+}
+
+/* Product details modal */
+.product-detail-box {
+    max-width: 560px;
+}
+
+.product-detail-img {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+}
+
+.product-detail-placeholder {
+    height: 220px;
+    border-radius: 8px;
+    background: var(--bg-light);
+    margin-bottom: 1.25rem;
+    font-size: 4rem;
+}
+
+.product-detail-price {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin: 0.25rem 0 0.75rem;
+}
+
+.product-detail-desc {
+    color: var(--text-light);
+    margin-bottom: 1rem;
+}
+
+.product-detail-stock {
+    margin-bottom: 0.5rem;
+}
+
+/* ===== Phase 1: Password strength meter (register form) ===== */
+.pw-strength {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.25rem 0 0.5rem;
+}
+.pw-strength-track {
+    flex: 1;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.pw-strength-track > div {
+    height: 100%;
+    width: 0;
+    background: #d1d5db;
+    border-radius: 3px;
+    transition: width 0.25s ease, background-color 0.25s ease;
+}
+.pw-strength > span {
+    font-size: 0.8rem;
+    min-width: 110px;
+}
+.pw-hints {
+    list-style: none;
+    margin: 0 0 0.75rem;
+    padding: 0;
+    font-size: 0.78rem;
+    color: var(--text-light);
+}
+.pw-hints li::before { content: '( ) '; }
+.pw-hints li.ok { color: #16a34a; }
+.pw-hints li.ok::before { content: '( ) '; }
+
+/* ===== Phase 1: form message colors (OTP page reuses .form-message) ===== */
+.form-message.error { color: #dc2626; }
+.form-message.success { color: #16a34a; }

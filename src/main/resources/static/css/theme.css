@@ -1,0 +1,751 @@
+/* ============================================================================
+   GiftConnect — shared design system (Phase 1)
+   ----------------------------------------------------------------------------
+   Loaded LAST on every page (after style.css and cart.css) so it refines the
+   existing visual language without discarding it:
+     • re-declares the existing custom properties (--primary, --text-dark,
+       --text-light, --bg-light, --primary-dark) so older rules keep working,
+     • adds a warm, premium token set and reusable component polish.
+   Purely presentational. No behavior, layout structure, or JS hooks change.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- 1. Tokens */
+:root {
+    /* Typography */
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+    --font-body: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+
+    /* Surfaces — warm ivory / cream */
+    --bg: #fbf6ee;
+    --bg-2: #f6ece0;
+    --surface: #ffffff;
+    --surface-2: #fbf3ea;
+    --bg-light: #f7ece0;          /* reused by existing rules */
+
+    /* Brand — deep plum / burgundy + soft blush */
+    --primary: #7c2542;
+    --primary-dark: #5e1a30;
+    --primary-soft: #f2dbe2;
+    --blush: #f7e3ea;
+    --blush-2: #ecccd8;
+    --accent: #c07a8f;
+
+    /* Text */
+    --text-dark: #2c2523;         /* charcoal */
+    --text-light: #6d625c;
+    --text-invert: #fdf8f2;
+
+    /* Lines */
+    --border: #e9ded2;
+    --border-strong: #d9c8b7;
+
+    /* Semantic */
+    --success: #1f7a45;
+    --success-bg: #e6f6ec;
+    --danger: #b3261e;
+    --danger-bg: #fbe9e7;
+    --warning: #9a6700;
+
+    /* Focus + elevation */
+    --focus: #b8567a;
+    --ring: 0 0 0 3px rgba(184, 86, 122, 0.35);
+    --shadow-sm: 0 1px 2px rgba(44, 37, 35, 0.06), 0 2px 6px rgba(44, 37, 35, 0.05);
+    --shadow: 0 8px 22px rgba(44, 37, 35, 0.08);
+    --shadow-lg: 0 20px 48px rgba(44, 37, 35, 0.16);
+
+    /* Shape + motion */
+    --radius-sm: 8px;
+    --radius: 14px;
+    --radius-lg: 20px;
+    --radius-pill: 999px;
+    --transition: 160ms ease;
+    --maxw: 1180px;
+}
+
+/* --------------------------------------------------------- 2. Base / reset */
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text-dark);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+body > main,
+body > .app-main {
+    flex: 1 0 auto;
+}
+
+h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    color: var(--text-dark);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+
+p {
+    color: var(--text-light);
+}
+
+/* Visible, high-contrast keyboard focus everywhere (accessibility). */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ------------------------------------------------------------ 3. Buttons */
+.btn-primary,
+.btn-secondary,
+.btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1.2;
+    padding: 0.72rem 1.5rem;
+    border-radius: var(--radius-sm);
+    text-align: center;
+    cursor: pointer;
+    transition: transform var(--transition), box-shadow var(--transition),
+                background-color var(--transition), filter var(--transition),
+                color var(--transition), border-color var(--transition);
+}
+
+.btn-primary {
+    background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+    color: #fff;
+    border: 1px solid var(--primary-dark);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(180deg, #8a2c4c, var(--primary-dark));
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
+
+.btn-secondary {
+    background: var(--surface);
+    color: var(--text-dark);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover {
+    background: var(--surface-2);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.btn-outline {
+    border: 1.5px solid var(--primary);
+    color: var(--primary) !important;
+    background: transparent;
+    padding: 0.55rem 1.1rem;
+}
+
+.btn-outline:hover {
+    background: var(--primary);
+    color: #fff !important;
+}
+
+.btn-primary:active,
+.btn-secondary:active,
+.btn-outline:active {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-outline:disabled,
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Small action buttons used across management tables. */
+.btn-small {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.42rem 0.9rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    background: var(--surface-2);
+    color: var(--text-dark);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--transition), color var(--transition),
+                border-color var(--transition), transform var(--transition);
+}
+
+.btn-small:hover {
+    transform: translateY(-1px);
+}
+
+.btn-small.edit,
+.btn-small.view {
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+}
+
+.btn-small.edit:hover,
+.btn-small.view:hover {
+    background: var(--blush-2);
+}
+
+.btn-small.delete {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.btn-small.delete:hover {
+    background: #f5d6d3;
+}
+
+/* ------------------------------------------------------------- 4. Forms */
+.auth-card input,
+.modal-box input,
+.modal-box textarea,
+.modal-box select,
+.field input,
+.field textarea,
+.otp-input {
+    width: 100%;
+    padding: 0.68rem 0.85rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: #fffdfa;
+    color: var(--text-dark);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    transition: border-color var(--transition), box-shadow var(--transition),
+                background-color var(--transition);
+}
+
+.toolbar input,
+.toolbar select {
+    padding: 0.58rem 0.85rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: #fffdfa;
+    color: var(--text-dark);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.auth-card input:focus,
+.modal-box input:focus,
+.modal-box textarea:focus,
+.modal-box select:focus,
+.field input:focus,
+.field textarea:focus,
+.otp-input:focus,
+.toolbar input:focus,
+.toolbar select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: var(--ring);
+    background: #fff;
+}
+
+.field label,
+.demo-option {
+    color: var(--text-dark);
+}
+
+/* --------------------------------------------------- 5. Header / app shell */
+.navbar,
+.app-navbar {
+    background: rgba(255, 253, 250, 0.92);
+    -webkit-backdrop-filter: saturate(140%) blur(8px);
+    backdrop-filter: saturate(140%) blur(8px);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 0 rgba(44, 37, 35, 0.02), 0 8px 20px rgba(44, 37, 35, 0.04);
+}
+
+.nav-container,
+.app-nav-container {
+    max-width: var(--maxw);
+}
+
+.logo {
+    font-family: var(--font-display);
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-dark);
+}
+
+.logo span {
+    color: var(--primary);
+}
+
+.nav-links a,
+.app-nav-links a {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+}
+
+.app-nav-links a {
+    position: relative;
+    padding: 0.45rem 0.15rem;
+    border-bottom: 2px solid transparent;
+    transition: color var(--transition), border-color var(--transition);
+}
+
+.app-nav-links a:hover,
+.app-nav-links a.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.nav-links a:hover {
+    color: var(--primary);
+}
+
+.hamburger span {
+    background: var(--primary-dark);
+}
+
+.app-nav-user {
+    color: var(--text-light);
+    font-size: 0.88rem;
+}
+
+.app-main {
+    width: 100%;
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 2.25rem 1.5rem 4rem;
+}
+
+.page-header {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.page-header h1 {
+    font-size: 1.9rem;
+    color: var(--primary-dark);
+}
+
+.section-heading {
+    font-size: 1.2rem;
+    color: var(--primary-dark);
+    padding-bottom: 0.4rem;
+}
+
+.toolbar {
+    gap: 0.65rem;
+}
+
+/* ------------------------------------------------------- 6. Hero / landing */
+.hero {
+    background:
+        radial-gradient(1100px 380px at 50% -10%, rgba(247, 227, 234, 0.9) 0%, rgba(247, 227, 234, 0) 62%),
+        linear-gradient(180deg, #fdf8f1, #f6ebe0);
+    border-bottom: 1px solid var(--border);
+}
+
+.hero h1 {
+    font-size: 3rem;
+    color: var(--primary-dark);
+}
+
+.hero p {
+    font-size: 1.12rem;
+    max-width: 620px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ------------------------------------------------------------- 7. Cards */
+.feature-card,
+.auth-card,
+.dashboard-tile,
+.product-card,
+.checkout-section,
+.cart-summary,
+.confirmation-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.feature-card,
+.dashboard-tile {
+    transition: transform var(--transition), box-shadow var(--transition),
+                border-color var(--transition);
+}
+
+.feature-card:hover,
+.dashboard-tile:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+    border-color: var(--blush-2);
+}
+
+.feature-card h3 {
+    color: var(--primary-dark);
+}
+
+.auth-card {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+}
+
+.auth-card h2 {
+    color: var(--primary-dark);
+    font-size: 1.4rem;
+}
+
+.dashboard-tile h3 {
+    color: var(--primary-dark);
+}
+
+/* ------------------------------------------------------------ 8. Tables */
+.data-table {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.data-table th,
+.data-table td {
+    border-bottom: 1px solid var(--border);
+}
+
+.data-table th {
+    background: var(--surface-2);
+    color: var(--primary-dark);
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.data-table tbody tr {
+    transition: background-color var(--transition);
+}
+
+.data-table tbody tr:hover {
+    background: #fdf6ef;
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ------------------------------------------------------- 9. Badges/pills */
+.badge {
+    border-radius: var(--radius-pill);
+    letter-spacing: 0.02em;
+}
+
+.badge.in-stock {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.badge.out-of-stock {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.badge.inactive {
+    background: #f1ece6;
+    color: #7a6f66;
+}
+
+.status-pill.success {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.status-pill.failure {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.role-pill.admin {
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+}
+
+.role-pill.seller {
+    background: #e7eefc;
+    color: #1e4e8c;
+}
+
+.role-pill.customer {
+    background: #f1ece6;
+    color: #5d544d;
+}
+
+.account-pill.active {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.account-pill.inactive {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.verified-yes {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.verified-no {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+/* ----------------------------------------------------------- 10. Modals */
+.modal-overlay {
+    background: rgba(44, 20, 30, 0.5);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+}
+
+.modal-box {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-box h2 {
+    color: var(--primary-dark);
+}
+
+/* -------------------------------------------------- 11. Messages / notices */
+.form-message.success {
+    color: var(--success);
+}
+
+.form-message.error {
+    color: var(--danger);
+}
+
+.cart-notice {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    background: var(--surface-2);
+    color: var(--text-dark);
+}
+
+.cart-notice.error {
+    border-left-color: var(--danger);
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.empty-state {
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.6);
+    margin-top: 0.5rem;
+}
+
+.cart-toast {
+    border-radius: var(--radius-sm);
+    background: var(--primary-dark);
+    box-shadow: var(--shadow-lg);
+}
+
+.cart-toast.error {
+    background: var(--danger);
+}
+
+/* ------------------------------------------------- 12. Products / cart */
+.product-card:hover {
+    box-shadow: var(--shadow);
+    border-color: var(--blush-2);
+}
+
+.product-card-img-wrap,
+.product-detail-placeholder {
+    background: linear-gradient(180deg, var(--blush), var(--surface-2));
+}
+
+.product-card-category {
+    color: var(--primary);
+    letter-spacing: 0.06em;
+}
+
+.product-card-price,
+.product-detail-price {
+    color: var(--primary-dark);
+}
+
+.product-details-btn {
+    border-radius: var(--radius-sm);
+}
+
+/* --------------------------------------------------- 13. Checkout detail */
+.payment-option {
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: #fffdfa;
+    transition: border-color var(--transition), background-color var(--transition);
+}
+
+.payment-option:hover {
+    border-color: var(--accent);
+}
+
+.payment-option:has(input:checked) {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+}
+
+.checkout-section h2 {
+    color: var(--primary-dark);
+}
+
+.cart-total,
+.review-total {
+    color: var(--primary-dark);
+}
+
+.qty-control button {
+    border-color: var(--border-strong);
+    border-radius: var(--radius-sm);
+    transition: background-color var(--transition), border-color var(--transition);
+}
+
+.qty-control button:hover {
+    background: var(--primary-soft);
+    border-color: var(--accent);
+}
+
+/* --------------------------------------------------- 14. Admin widgets */
+.admin-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.admin-stat .value {
+    font-family: var(--font-display);
+    color: var(--primary);
+}
+
+.admin-stat.alert .value {
+    color: var(--danger);
+}
+
+.detail-grid dt {
+    color: var(--text-light);
+}
+
+/* --------------------------------------------------------- 15. OTP page */
+.otp-input {
+    letter-spacing: 0.5rem;
+    font-weight: 600;
+}
+
+.otp-card {
+    box-shadow: var(--shadow);
+}
+
+/* ----------------------------------------------------------- 16. Footer */
+.footer {
+    background: linear-gradient(180deg, #34131f, #24101a);
+    color: #e6d2d8;
+    border-top: 3px solid var(--primary);
+    padding: 1.75rem 1.5rem;
+    font-size: 0.88rem;
+}
+
+.footer p {
+    color: #e6d2d8;
+    margin: 0;
+}
+
+/* ------------------------------------------------------ 17. Responsive */
+@media (max-width: 860px) {
+    .app-nav-container {
+        gap: 0.6rem;
+    }
+
+    .app-nav-links {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 0.4rem 1rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.6rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .app-main {
+        padding: 1.5rem 1rem 3rem;
+    }
+
+    .nav-container,
+    .app-nav-container {
+        padding: 0.85rem 1rem;
+    }
+
+    .hero {
+        padding: 4rem 1.25rem;
+    }
+
+    .hero h1 {
+        font-size: 2.15rem;
+    }
+
+    .toolbar input,
+    .toolbar select {
+        flex: 1 1 160px;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        padding: 0.7rem 1.2rem;
+    }
+}
+
+/* Respect users who prefer less motion. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .feature-card:hover,
+    .dashboard-tile:hover,
+    .btn-primary:hover,
+    .btn-secondary:hover,
+    .btn-small:hover {
+        transform: none;
+    }
+}
