@@ -69,6 +69,15 @@ function initAuth() {
             const data = await res.json();
 
             if (!res.ok) {
+                // Unverified account: 403 with needsVerification — send to OTP page.
+                if (data.needsVerification) {
+                    loginMessage.textContent = data.error;
+                    loginMessage.classList.add('error');
+                    setTimeout(() => {
+                        window.location.href = 'verify.html#' + encodeURIComponent(data.email || email);
+                    }, 1500);
+                    return;
+                }
                 loginMessage.textContent = data.error || 'Login failed';
                 loginMessage.classList.add('error');
                 return;
@@ -112,9 +121,15 @@ function initAuth() {
                 return;
             }
 
-            registerMessage.textContent = 'Account created — you can log in now.';
+            // Registration now creates an UNVERIFIED account and emails a 6-digit
+            // OTP. Send the user to the verification page with the email (the
+            // fragment is cleared there as soon as it is read).
+            registerMessage.textContent = data.message || 'Check your email for the verification code.';
             registerMessage.classList.add('success');
             registerForm.reset();
+            setTimeout(() => {
+                window.location.href = 'verify.html#' + encodeURIComponent(payload.email);
+            }, 1200);
         } catch (err) {
             registerMessage.textContent = 'Network error — is the server running?';
             registerMessage.classList.add('error');

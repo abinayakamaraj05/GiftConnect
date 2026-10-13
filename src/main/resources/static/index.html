@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GiftConnect | Loved Ones Gifting Platform</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/theme.css">
 </head>
 <body>
 
@@ -68,8 +69,8 @@
             <div class="auth-card">
                 <h2>Login</h2>
                 <form id="loginForm">
-                    <input type="email" id="loginEmail" placeholder="Email" required>
-                    <input type="password" id="loginPassword" placeholder="Password" required>
+                    <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" aria-label="Email address" required>
+                    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" aria-label="Password" required>
                     <button type="submit" class="btn-primary">Login</button>
                 </form>
                 <p class="form-message" id="loginMessage"></p>
@@ -78,11 +79,16 @@
             <div class="auth-card">
                 <h2>Register</h2>
                 <form id="registerForm">
-                    <input type="text" id="registerName" placeholder="Full name" required>
-                    <input type="email" id="registerEmail" placeholder="Email" required>
-                    <input type="password" id="registerPassword" placeholder="Password" required>
-                    <input type="tel" id="registerPhone" placeholder="Phone">
-                    <input type="text" id="registerAddress" placeholder="Address">
+                    <input type="text" id="registerName" placeholder="Full name" autocomplete="name" aria-label="Full name" required>
+                    <input type="email" id="registerEmail" placeholder="Email" autocomplete="email" aria-label="Email address" required>
+                    <input type="password" id="registerPassword" placeholder="Password" autocomplete="new-password" aria-label="Password" required>
+                    <div class="pw-strength">
+                        <div class="pw-strength-track"><div id="pwStrengthBar"></div></div>
+                        <span id="pwStrengthLabel"></span>
+                    </div>
+                    <ul id="pwHints" class="pw-hints"></ul>
+                    <input type="tel" id="registerPhone" placeholder="Phone" autocomplete="tel" aria-label="Phone number">
+                    <input type="text" id="registerAddress" placeholder="Address" autocomplete="street-address" aria-label="Address">
                     <button type="submit" class="btn-primary">Create Account</button>
                 </form>
                 <p class="form-message" id="registerMessage"></p>
@@ -95,6 +101,7 @@
         <p>&copy; 2026 GiftConnect. Built as a college capstone project.</p>
     </footer>
 
+    <script src="js/password.js"></script>
     <script src="js/script.js"></script>
 </body>
 </html>

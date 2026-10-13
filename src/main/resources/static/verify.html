@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email | GiftConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .otp-card { max-width: 420px; margin: 3rem auto; }
+        .otp-input {
+            width: 100%; padding: 0.75rem; font-size: 1.4rem; letter-spacing: 0.5rem;
+            text-align: center; margin: 0.75rem 0; box-sizing: border-box;
+        }
+        .otp-actions { display: flex; gap: 0.75rem; align-items: center; margin-top: 1rem; }
+    </style>
+    <link rel="stylesheet" href="css/theme.css">
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">Gift<span>Connect</span></a>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <div class="auth-card otp-card">
+            <h2>Verify your email</h2>
+            <p id="otpIntro" style="color: var(--text-light);">Enter the 6-digit code we emailed you.</p>
+
+            <form id="otpForm">
+                <input class="otp-input" id="otpCode" inputmode="numeric" maxlength="6"
+                       pattern="\d{6}" placeholder="••••••" autocomplete="one-time-code"
+                       aria-label="6-digit verification code" required>
+                <button type="submit" class="btn-primary" style="width:100%;">Verify</button>
+            </form>
+            <p class="form-message" id="otpMessage"></p>
+
+            <div class="otp-actions">
+                <button type="button" class="btn-outline" id="resendBtn">Resend code</button>
+                <span id="resendTimer" style="color: var(--text-light);"></span>
+            </div>
+            <p style="margin-top:1.5rem;">
+                <a href="index.html">Back to login</a>
+            </p>
+        </div>
+    </main>
+
+    <script src="js/verify.js?v=4"></script>
+</body>
+</html>

@@ -1,12 +1,20 @@
 /**
- * Include this script on every page that requires login
- * (dashboard.html, categories.html, products.html).
+ * Include this script on every page that requires login, OR on pages that are
+ * browsable without one (Phase 2 catalog pages: categories.html, products.html).
  *
- * It checks GET /api/auth/me on load. If there's no active session,
- * it redirects to the login page immediately. If there is one, it
- * fills in any element with id="currentUserEmail" and wires up any
- * element with id="navLogoutBtn".
+ * It checks GET /api/auth/me on load:
+ *   - no session, strict mode          -> redirect to the login page immediately
+ *   - no session, optional mode        -> stay put and offer a Login link instead
+ *   - session present                  -> fill id="currentUserEmail" + wire logout
+ *
+ * Optional mode is opted into with <script src="js/auth-guard.js" data-optional="true">.
+ * Anonymous catalog pages use it so logged-out visitors can still browse.
  */
+const GC_OPTIONAL_AUTH = (() => {
+    const self = document.currentScript;
+    return !!(self && self.dataset && self.dataset.optional === 'true');
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
     fetch('/api/auth/me', { credentials: 'include' })
         .then(res => res.ok ? res.json() : Promise.reject())
@@ -15,7 +23,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (emailLabel) emailLabel.textContent = user.email;
         })
         .catch(() => {
-            window.location.href = 'index.html';
+            if (!GC_OPTIONAL_AUTH) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Public page: keep the catalog visible and swap the user area for a
+            // login link, since there is no session to log out of.
+            const emailLabel = document.getElementById('currentUserEmail');
+            if (emailLabel) {
+                emailLabel.textContent = '';
+                const login = document.createElement('a');
+                login.href = 'index.html';
+                login.textContent = 'Login / Register';
+                emailLabel.appendChild(login);
+            }
+            const anonymousLogout = document.getElementById('navLogoutBtn');
+            if (anonymousLogout) anonymousLogout.style.display = 'none';
         });
 
     const logoutBtn = document.getElementById('navLogoutBtn');
@@ -47,7 +71,11 @@ async function apiRequest(url, options = {}) {
     if (!res.ok) {
         // Validation errors come back as {field: message, ...}; others as {error: "..."}
         const message = data.error || Object.values(data)[0] || `Request failed (${res.status})`;
-        throw new Error(message);
+        const error = new Error(message);
+        // Expose the HTTP status so callers can show a friendly message for
+        // authorization failures (e.g. 403) without surfacing server internals.
+        error.status = res.status;
+        throw error;
     }
 
     return data;
