@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management | GiftConnect</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        /* Only what is unique to this page; everything else reuses style.css */
+        .filter-row { flex-wrap: wrap; }
+        .filter-row select, .filter-row input { min-width: 150px; }
+        .pager { display: flex; align-items: center; gap: 0.75rem; margin: 1rem 0 2rem; }
+        .role-pill, .account-pill {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .role-pill.admin { background: #ede9fe; color: #5b21b6; }
+        .role-pill.seller { background: #e0f2fe; color: #075985; }
+        .role-pill.customer { background: #f3f4f6; color: #374151; }
+        .account-pill.active { background: #dcfce7; color: #166534; }
+        .account-pill.inactive { background: #fee2e2; color: #991b1b; }
+        .verified-yes { color: #166534; font-weight: 600; }
+        .verified-no { color: #991b1b; font-weight: 600; }
+        .user-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .btn-small.view { background: #eef2ff; color: #3730a3; }
+        /* Reuses .modal/.modal-box/.modal-actions from style.css */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 0.5rem 1rem;
+            margin: 1rem 0;
+            font-size: 0.92rem;
+        }
+        .detail-grid dt { color: var(--text-light); font-weight: 600; }
+        .detail-grid dd { margin: 0; overflow-wrap: anywhere; }
+    </style>
+    <link rel="stylesheet" href="../css/theme.css">
+</head>
+<body>
+
+    <header class="app-navbar">
+        <div class="app-nav-container">
+            <a href="../dashboard.html" class="logo">Gift<span>Connect</span></a>
+            <ul class="app-nav-links">
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="../categories.html">Categories</a></li>
+                <li><a href="../products.html">Products</a></li>
+                <li><a href="../orders.html">Orders</a></li>
+                <li><a href="dashboard.html">Admin</a></li>
+                <li><a href="users.html" class="active">Users</a></li>
+            </ul>
+            <div class="app-nav-user">
+                <span id="currentUserEmail">&hellip;</span>
+                <button class="btn-small delete" id="navLogoutBtn">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+
+        <!-- Shown only when the signed-in account is not an ADMIN -->
+        <div class="cart-notice error" id="usersDenied" style="display:none;">
+            Access denied — this page is only available to ADMIN accounts.
+        </div>
+
+        <div id="usersContent" style="display:none;">
+            <div class="page-header">
+                <h1>User management</h1>
+                <button class="btn-small edit" id="usersRefreshBtn">Refresh</button>
+            </div>
+
+            <p class="form-message" id="usersMessage"></p>
+
+            <div class="toolbar filter-row">
+                <input type="text" id="userSearch" placeholder="Search name or email">
+                <select id="userRoleFilter" title="Role filter">
+                    <option value="">All roles</option>
+                    <option value="CUSTOMER">CUSTOMER</option>
+                    <option value="SELLER">SELLER</option>
+                    <option value="ADMIN">ADMIN</option>
+                </select>
+                <select id="userStatusFilter" title="Account status filter">
+                    <option value="">All statuses</option>
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="INACTIVE">INACTIVE</option>
+                </select>
+                <button class="btn-small edit" id="userApplyBtn">Apply</button>
+                <button class="btn-small" id="userClearBtn">Clear</button>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Verified</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+            </table>
+            <div class="empty-state" id="usersEmptyState" style="display:none;">
+                No users match these filters.
+            </div>
+
+            <div class="pager">
+                <button class="btn-small" id="usersPrevBtn">Previous</button>
+                <span id="usersPageInfo" style="color: var(--text-light);"></span>
+                <button class="btn-small" id="usersNextBtn">Next</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- View-user modal: safe UserResponse fields only (never password/OTP). -->
+    <div class="modal" id="userModal">
+        <div class="modal-box">
+            <h2 id="userModalTitle">User details</h2>
+            <dl class="detail-grid" id="userModalBody"></dl>
+            <div class="modal-actions">
+                <button class="btn-small" id="userModalCloseBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 GiftConnect. Built as a college capstone project.</p>
+    </footer>
+
+    <script src="users.js"></script>
+</body>
+</html>

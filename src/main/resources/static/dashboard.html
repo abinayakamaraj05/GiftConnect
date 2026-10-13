@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | GiftConnect</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/theme.css">
 </head>
 <body>
 
@@ -16,6 +17,7 @@
                 <li><a href="categories.html">Categories</a></li>
                 <li><a href="products.html">Products</a></li>
                 <li><a href="orders.html">Orders</a></li>
+                <li id="navAdminItem" style="display:none;"><a href="admin/dashboard.html">Admin</a></li>
             </ul>
             <div class="app-nav-user">
                 <span id="currentUserEmail">…</span>
@@ -51,5 +53,18 @@
     </footer>
 
     <script src="js/auth-guard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/api/auth/me', { credentials: 'include' })
+                .then(res => res.ok ? res.json() : Promise.reject())
+                .then(user => {
+                    if (user && user.role === 'ADMIN') {
+                        const adminItem = document.getElementById('navAdminItem');
+                        if (adminItem) adminItem.style.display = '';
+                    }
+                })
+                .catch(() => {});
+        });
+    </script>
 </body>
 </html>
