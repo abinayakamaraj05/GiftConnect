@@ -3,9 +3,11 @@ package com.giftconnect.exception;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -21,6 +23,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleNotFound(ResourceNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", e.getMessage()));
+    }
+
+    /**
+     * Thrown by AccessControl when an authenticated caller lacks the role or
+     * ownership required for an action. Always 403 — never 404 — so response
+     * codes cannot be used to probe for resources the caller may not see.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(Map.of("error", e.getMessage()));
     }
 
@@ -52,6 +65,30 @@ public class GlobalExceptionHandler {
                 errors.put(fieldError.getField(), fieldError.getDefaultMessage())
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+    }
+
+    /**
+     * Triggered when a path variable or query parameter cannot be converted to the
+     * expected type — e.g. an audit filter like role=NOPE, type=NOT_A_TYPE, or a
+     * non-numeric id. Without this handler the generic one below would turn
+     * Spring's own 400 into a 500.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, String>> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "Invalid value for '" + e.getName() + "': " + e.getValue()));
+    }
+
+    /**
+     * Triggered when a request body cannot be read — malformed JSON, or a value
+     * that does not fit the target type (e.g. {"role":"MANAGER"} for the Role
+     * enum, or {"status":"DELETED"}). Reported as 400 rather than 500, so an
+     * invalid role/status is explicitly rejected instead of crashing.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> handleUnreadableBody(HttpMessageNotReadableException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "Malformed request body or unsupported value"));
     }
 
     /**
