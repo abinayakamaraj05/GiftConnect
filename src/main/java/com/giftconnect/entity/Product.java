@@ -58,6 +58,18 @@ public class Product {
     @Column(name = "status", nullable = false, length = 20)
     private String status = "ACTIVE";
 
+    /**
+     * Phase 3 — the SELLER who owns this product. Deliberately NULLABLE:
+     * a NULL seller_id means a legacy/platform-owned product (e.g. created by
+     * an ADMIN or seeded before ownership existed), which only an ADMIN may
+     * manage. A SELLER may only manage rows whose seller_id matches their own
+     * session user id. The owner is always taken from the authenticated session
+     * (never from client input) — see ProductService.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_id")
+    private User seller;
+
     public Product() {
     }
 
@@ -125,5 +137,22 @@ public class Product {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public User getSeller() {
+        return seller;
+    }
+
+    public void setSeller(User seller) {
+        this.seller = seller;
+    }
+
+    /**
+     * The owner's user id, or null for a legacy/platform-owned product. Kept as
+     * a convenience so authorization checks never have to dereference a lazy
+     * proxy: AccessControl.requireOwnerOrAdmin(getSellerId(), request).
+     */
+    public Long getSellerId() {
+        return seller == null ? null : seller.getUserId();
     }
 }
