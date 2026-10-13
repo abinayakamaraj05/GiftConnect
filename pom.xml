@@ -59,6 +59,16 @@
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
+        <!--
+            Spring Mail: sends the OTP verification emails over real SMTP
+            (Gmail App Password via MAIL_USERNAME / MAIL_PASSWORD env vars —
+            never hard-coded, never committed).
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- Testing support (JUnit, Mockito, etc.) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
