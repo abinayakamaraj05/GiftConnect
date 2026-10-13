@@ -2,6 +2,7 @@ package com.giftconnect.service;
 
 import com.giftconnect.entity.Role;
 import com.giftconnect.entity.User;
+import com.giftconnect.exception.InvalidOperationException;
 import com.giftconnect.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -50,6 +51,54 @@ public class UserService {
     }
 
     /**
+     * Phase 1: OTP-based registration. Validates the password policy
+     * server-side (independent of any frontend check) and creates the account
+     * in an UNVERIFIED state. It does NOT generate, store, or send the OTP —
+     * since the Phase 4O fix, that is owned by AuthController.register's
+     * new-account branch (mirroring the unverified re-registration branch).
+     *
+     * The response to the client is neutral — it never reveals whether an
+     * email is already registered when the caller is unauthenticated.
+     */
+    public User registerWithOtp(com.giftconnect.dto.RegisterRequest request) {
+        // Server-side password strength validation — never trust the frontend.
+        java.util.List<String> passwordProblems =
+                com.giftconnect.util.PasswordPolicy.violations(request.getPassword());
+        if (!passwordProblems.isEmpty()) {
+            throw new InvalidOperationException(String.join("; ", passwordProblems));
+        }
+
+        User user = new User();
+        user.setName(request.getName().trim());
+        user.setEmail(request.getEmail().trim().toLowerCase());
+        user.setPhone(request.getPhone());
+        user.setAddress(request.getAddress());
+        user.setRole(Role.CUSTOMER); // public registration is always CUSTOMER
+        user.setEmailVerified(false);
+        user.setPassword(passwordEncoder.encode(request.getPassword())); // BCrypt immediately
+
+        // Duplicate email -> 409 via IllegalStateException (unchanged behavior).
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new IllegalStateException("Email already registered: " + user.getEmail());
+        }
+
+        User saved = userRepository.save(user);
+        return saved;
+    }
+
+    /**
+     * Marks the account verified after OtpService.verifyOtp succeeded.
+     * Kept separate so the transaction boundary is explicit at the controller.
+     */
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email == null ? null : email.trim().toLowerCase());
+    }
+
+    /**
      * Verifies login credentials. Returns the matching User if the email exists
      * AND the given plaintext password matches the stored hash. Returns
      * Optional.empty() for either a missing user or a wrong password — the
@@ -72,5 +121,10 @@ public class UserService {
     public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("User not found with id: " + id));
+    }
+
+    /** Non-throwing variant used by AuthController /me enrichment. */
+    public java.util.Optional<User> getUserByIdOptional(Long id) {
+        return userRepository.findById(id);
     }
 }
