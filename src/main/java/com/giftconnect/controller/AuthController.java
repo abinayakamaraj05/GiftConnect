@@ -1,5 +1,6 @@
 package com.giftconnect.controller;
 
+import com.giftconnect.dto.ChangePasswordRequest;
 import com.giftconnect.dto.OtpVerifyRequest;
 import com.giftconnect.dto.RegisterRequest;
 import com.giftconnect.dto.ResendOtpRequest;
@@ -287,6 +288,41 @@ public class AuthController {
                 "accountStatus", accountStatus,
                 "role", role
         ));
+    }
+
+    /**
+     * Self-service password change for the account behind THIS session.
+     *
+     * Identity: taken exclusively from the server-side session via SessionActor —
+     * the request body has no user id field, so a caller can only ever change
+     * their own password. AuthFilter has already required a session and rejected
+     * a deactivated/removed account before this runs.
+     *
+     * Errors: a wrong current password, a weak new password, or re-using the
+     * current one are all business-rule violations and become 400 responses via
+     * GlobalExceptionHandler. The success audit event is written ONLY after the
+     * service call returns, so a failure never records a misleading success.
+     *
+     * The session is deliberately kept alive (same as before) — no role, status
+     * or identity changes, and nothing about the password is echoed back.
+     */
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest request,
+                                            HttpServletRequest httpRequest) {
+        SessionActor.Actor actor = SessionActor.from(httpRequest);
+        if (actor.userId() == null) {
+            // AuthFilter normally guarantees this; kept as a fail-closed guard.
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Not logged in"));
+        }
+
+        userService.changePassword(actor.userId(), request.getCurrentPassword(), request.getNewPassword());
+
+        activityLogService.log(ActivityType.AUTH_PASSWORD_CHANGED, ActivityStatus.SUCCESS,
+                actor.userId(), actor.role(), actor.email(), "USER", actor.userId(),
+                "Password changed", httpRequest);
+
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully."));
     }
 
     @PostMapping("/logout")

@@ -1,12 +1,17 @@
 package com.giftconnect.service;
 
+import com.giftconnect.dto.ProfileUpdateRequest;
+import com.giftconnect.dto.UserResponse;
 import com.giftconnect.entity.Role;
 import com.giftconnect.entity.User;
 import com.giftconnect.exception.InvalidOperationException;
+import com.giftconnect.exception.ResourceNotFoundException;
 import com.giftconnect.repository.UserRepository;
+import com.giftconnect.util.PasswordPolicy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -126,5 +131,99 @@ public class UserService {
     /** Non-throwing variant used by AuthController /me enrichment. */
     public java.util.Optional<User> getUserByIdOptional(Long id) {
         return userRepository.findById(id);
+    }
+
+    // ==================================================================
+    // Phase: secure account management (self-service password + profile)
+    // ==================================================================
+
+    /**
+     * Self-service password change for the account identified by {@code userId}.
+     *
+     * The controller passes ONLY the id it read from the authenticated session,
+     * so a caller can never aim this at somebody else's account.
+     *
+     * Checks, in order:
+     *   1. the account exists (404 if it does not — it is the caller's own id,
+     *      so this reveals nothing about anyone else);
+     *   2. the account is still ACTIVE (a deactivated account cannot rotate
+     *      its credentials even if it races AuthFilter's own check);
+     *   3. the supplied current password matches the stored BCrypt hash;
+     *   4. the new password satisfies {@link PasswordPolicy} — the SAME policy
+     *      registration uses, never a competing one;
+     *   5. the new password differs from the current one.
+     *
+     * On success the new password is BCrypt-encoded before the single save, so
+     * plaintext is never persisted. Any failed check throws before save, which
+     * leaves the stored password untouched (no partial update) and lets the
+     * caller avoid writing a misleading success audit event.
+     *
+     * Transactional: the encode + save happen as one unit.
+     */
+    @Transactional
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        // Defense in depth: AuthFilter already destroys sessions for INACTIVE
+        // accounts, but the credential rotation itself refuses them too.
+        if (!user.isActive()) {
+            throw new InvalidOperationException("This account has been deactivated. Please contact support.");
+        }
+
+        // Null-safe by construction: a null current password is rejected before
+        // it ever reaches PasswordEncoder.matches (which would otherwise NPE).
+        if (currentPassword == null || !passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new InvalidOperationException("Current password is incorrect.");
+        }
+
+        List<String> passwordProblems = PasswordPolicy.violations(newPassword);
+        if (!passwordProblems.isEmpty()) {
+            throw new InvalidOperationException(String.join("; ", passwordProblems));
+        }
+
+        // Checked AFTER the policy, so a null/empty new password never reaches
+        // String.equals — and a re-used password is refused with a clear reason.
+        if (newPassword.equals(currentPassword)) {
+            throw new InvalidOperationException("New password must be different from your current password.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    /**
+     * Self-service update of the caller's own editable profile fields.
+     *
+     * Only name, phone and address are written: the request DTO has no other
+     * setters, so email, role, account status, verification state, OTP fields
+     * and the password hash are structurally impossible to change here even
+     * if a client posts them.
+     *
+     * Returns the safe {@link UserResponse} projection, so credential material
+     * can never be serialized to the client. Transactional so a failed save
+     * cannot leave a half-applied update.
+     */
+    @Transactional
+    public UserResponse updateProfile(Long userId, ProfileUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        user.setName(request.getName().trim());
+        // Optional fields: blank comes back as null rather than an empty string.
+        user.setPhone(trimToNull(request.getPhone()));
+        user.setAddress(trimToNull(request.getAddress()));
+
+        User saved = userRepository.save(user);
+        return UserResponse.fromEntity(saved);
+    }
+
+    /** Trims a value; blank or whitespace-only becomes null. */
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

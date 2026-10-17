@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | GiftConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/theme.css">
+</head>
+<body>
+
+    <header class="app-navbar">
+        <div class="app-nav-container">
+            <a href="dashboard.html" class="logo">Gift<span>Connect</span></a>
+            <ul class="app-nav-links">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="categories.html">Categories</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="orders.html">Orders</a></li>
+                <li><a href="profile.html" class="active">Profile</a></li>
+            </ul>
+            <div class="app-nav-user">
+                <span id="currentUserEmail">…</span>
+                <button class="btn-small delete" id="navLogoutBtn">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <div class="page-header">
+            <h1>My Profile</h1>
+        </div>
+
+        <div class="auth-forms">
+
+            <!-- ============================================================
+                 Profile details — only name / phone / address are editable.
+                 Email is the login identity (tied to OTP verification) and is
+                 shown read-only; role and status are server-owned.
+                 ============================================================ -->
+            <div class="auth-card">
+                <h2>Profile details</h2>
+                <form id="profileForm">
+                    <input type="text" id="profileName" placeholder="Full name"
+                           maxlength="100" autocomplete="name" aria-label="Full name" required>
+                    <input type="email" id="profileEmail" placeholder="Email"
+                           autocomplete="email" aria-label="Email address" readonly>
+                    <input type="text" id="profileRole" placeholder="Role"
+                           aria-label="Account role" readonly>
+                    <input type="tel" id="profilePhone" placeholder="Phone (optional)"
+                           maxlength="15" autocomplete="tel" aria-label="Phone number">
+                    <textarea id="profileAddress" placeholder="Address (optional)"
+                              maxlength="500" rows="3" autocomplete="street-address"
+                              aria-label="Address"></textarea>
+                    <button type="submit" class="btn-primary" id="profileSubmitBtn">Save Changes</button>
+                </form>
+                <p class="form-message" id="profileMessage"></p>
+            </div>
+
+            <!-- ============================================================
+                 Change password — current + new + confirmation.
+                 Nothing here is stored in localStorage/sessionStorage/URL;
+                 the server re-validates every rule independently.
+                 ============================================================ -->
+            <div class="auth-card">
+                <h2>Change password</h2>
+                <form id="passwordForm">
+                    <input type="password" id="currentPassword" placeholder="Current password"
+                           autocomplete="current-password" aria-label="Current password" required>
+                    <input type="password" id="newPassword" placeholder="New password"
+                           autocomplete="new-password" aria-label="New password" required>
+                    <div class="pw-strength">
+                        <div class="pw-strength-track"><div id="pwStrengthBar"></div></div>
+                        <span id="pwStrengthLabel"></span>
+                    </div>
+                    <ul id="pwHints" class="pw-hints"></ul>
+                    <input type="password" id="confirmPassword" placeholder="Confirm new password"
+                           autocomplete="new-password" aria-label="Confirm new password" required>
+                    <button type="submit" class="btn-primary" id="passwordSubmitBtn">Change Password</button>
+                </form>
+                <p class="form-message" id="passwordMessage"></p>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 GiftConnect. Built as a college capstone project.</p>
+    </footer>
+
+    <script src="js/auth-guard.js"></script>
+    <script src="js/profile.js"></script>
+</body>
+</html>

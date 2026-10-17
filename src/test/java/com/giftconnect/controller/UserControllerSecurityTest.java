@@ -2,6 +2,7 @@ package com.giftconnect.controller;
 
 import com.giftconnect.entity.Role;
 import com.giftconnect.entity.User;
+import com.giftconnect.service.ActivityLogService;
 import com.giftconnect.service.UserService;
 import com.giftconnect.util.TestSessions;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,11 @@ class UserControllerSecurityTest {
 
     @MockitoBean
     private UserService userService;
+
+    // UserController now writes PROFILE_UPDATED after a self-service profile
+    // update, so the audit service is a dependency of the bean under test.
+    @MockitoBean
+    private ActivityLogService activityLogService;
 
     private static final Long ACTOR_ID = 7L;
     private static final Long TARGET_ID = 3L;
