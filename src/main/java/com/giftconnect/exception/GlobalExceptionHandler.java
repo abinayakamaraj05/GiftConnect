@@ -1,5 +1,7 @@
 package com.giftconnect.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,9 +19,30 @@ import java.util.Map;
  * Catches exceptions thrown anywhere in the Category/Product controllers
  * and turns them into consistent JSON error responses, instead of every
  * controller method needing its own try/catch.
+ *
+ * Client-facing error bodies are intentionally limited to safe, curated text.
+ * Unexpected exceptions are logged server-side (with their stack trace) and
+ * returned as a generic message, so no internal detail (messages, SQL, class
+ * names, stack traces) ever reaches the caller.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /**
+     * Unknown routes and missing static resources (e.g. GET /no/such/route).
+     * Spring throws NoResourceFoundException from its static-resource handler;
+     * without this specific handler it would fall through to the generic
+     * handler below and become a 500. Returned as a flat 404 with no detail so
+     * the response cannot reveal filesystem/route internals.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, String>> handleNoResource(NoResourceFoundException e) {
+        log.warn("No handler/resource found for request: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Not found"));
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleNotFound(ResourceNotFoundException e) {
@@ -103,9 +127,15 @@ public class GlobalExceptionHandler {
                         "e.g. deleting a category that still has products assigned to it."));
     }
 
+    /**
+     * Last-resort catch-all for anything not handled above. The real exception
+     * (message + stack trace) is logged server-side only; the client receives a
+     * stable generic message so internal diagnostics never leak through the API.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGeneric(Exception e) {
+        log.error("Unhandled exception", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Something went wrong: " + e.getMessage()));
+                .body(Map.of("error", "Internal server error"));
     }
 }
