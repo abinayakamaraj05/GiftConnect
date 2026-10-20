@@ -6,6 +6,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -42,6 +44,28 @@ public class GlobalExceptionHandler {
         log.warn("No handler/resource found for request: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("error", "Not found"));
+    }
+
+    /**
+     * A known path was called with the wrong HTTP method (e.g. PUT on a GET-only
+     * route). Spring raises HttpRequestMethodNotSupportedException; without this
+     * specific handler it fell through to the catch-all and became a 500. Mapped
+     * here to the correct 405 with no internal detail.
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Map<String, String>> handleMethodNotSupported(HttpRequestMethodNotSupportedException e) {
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(Map.of("error", "HTTP method not supported for this endpoint"));
+    }
+
+    /**
+     * A request body was sent with an unsupported Content-Type. Mapped to 415
+     * rather than the catch-all's 500.
+     */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<Map<String, String>> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException e) {
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(Map.of("error", "Unsupported content type"));
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -96,11 +120,16 @@ public class GlobalExceptionHandler {
      * expected type — e.g. an audit filter like role=NOPE, type=NOT_A_TYPE, or a
      * non-numeric id. Without this handler the generic one below would turn
      * Spring's own 400 into a 500.
+     *
+     * The offending VALUE is deliberately not echoed back: it is arbitrary caller
+     * input, and reflecting it into the response is unnecessary and can carry
+     * sensitive data. Only the safe parameter name is reported so the caller
+     * still knows which field was invalid.
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, String>> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", "Invalid value for '" + e.getName() + "': " + e.getValue()));
+                .body(Map.of("error", "Invalid value for '" + e.getName() + "'"));
     }
 
     /**

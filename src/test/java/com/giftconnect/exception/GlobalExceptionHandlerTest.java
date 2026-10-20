@@ -9,15 +9,20 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -92,6 +97,21 @@ class GlobalExceptionHandlerTest {
         void duplicate() {
             throw new DuplicateResourceException("Duplicate message");
         }
+
+        @GetMapping("/test/method-only")
+        void methodOnly() {
+            // Only GET is mapped here, so any other verb triggers a 405.
+        }
+
+        @PostMapping(value = "/test/json", consumes = MediaType.APPLICATION_JSON_VALUE)
+        void jsonEndpoint(@RequestBody String body) {
+            // Consumes JSON only, so a different Content-Type triggers a 415.
+        }
+
+        @GetMapping("/test/typed/{id}")
+        void typed(@PathVariable Long id) {
+            // A non-numeric {id} cannot be bound, triggering a type mismatch.
+        }
     }
 
     @Test
@@ -144,5 +164,29 @@ class GlobalExceptionHandlerTest {
         mockMvc.perform(get("/test/duplicate"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("Duplicate message"));
+    }
+
+    @Test
+    void wrongHttpMethod_returns405_withSafeMessage() throws Exception {
+        mockMvc.perform(post("/test/method-only"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.error").value("HTTP method not supported for this endpoint"));
+    }
+
+    @Test
+    void unsupportedContentType_returns415_withSafeMessage() throws Exception {
+        mockMvc.perform(post("/test/json")
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .content("plain text"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.error").value("Unsupported content type"));
+    }
+
+    @Test
+    void typeMismatch_returns400_withoutEchoingOffendingValue() throws Exception {
+        mockMvc.perform(get("/test/typed/not-a-number"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid value for 'id'"))
+                .andExpect(content().string(not(containsString("not-a-number"))));
     }
 }
