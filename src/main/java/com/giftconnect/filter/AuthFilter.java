@@ -194,7 +194,11 @@ public class AuthFilter extends OncePerRequestFilter {
     }
 
     private boolean isPublicPath(HttpServletRequest request) {
-        String path = request.getRequestURI();
+        String path = publicMatchPath(request);
+        if (path == null) {
+            // Unresolvable or deliberately non-normalizable path — fail closed.
+            return false;
+        }
 
         if (matchesAny(PUBLIC_PATHS, path)) {
             return true;
@@ -204,6 +208,40 @@ public class AuthFilter extends OncePerRequestFilter {
         // the same paths never reaches this branch, so anonymous writes are still
         // rejected here with 401 before any controller runs.
         return isGet(request) && matchesAny(PUBLIC_GET_PATHS, path);
+    }
+
+    /**
+     * Returns the request path in a form safe to match allowlist prefixes against,
+     * or {@code null} when the path must not be treated as public.
+     *
+     * The raw {@link HttpServletRequest#getRequestURI()} is used verbatim by the
+     * container for dispatch, so a path such as {@code /api/products/../api/users}
+     * satisfies the {@code /api/products/} prefix here yet is routed (and would be
+     * authorized) differently downstream. To close that gap the path is resolved
+     * with {@link StringUtils#cleanPath} first, so dot-segments cannot smuggle a
+     * protected route past the prefix check.
+     *
+     * Percent-encoded separators/dots ({@code %2e}, {@code %2f}, {@code %5c},
+     * {@code %00}) are treated as non-public: Tomcat may decode them before
+     * routing while this filter sees the encoded form, so matching them against a
+     * public prefix could disagree with the final dispatch target. No legitimate
+     * public page or API path in this app uses those encodings, so failing closed
+     * costs nothing and removes the ambiguity.
+     */
+    private String publicMatchPath(HttpServletRequest request) {
+        String raw = request.getRequestURI();
+        if (raw == null || raw.isEmpty()) {
+            return null;
+        }
+
+        String lower = raw.toLowerCase(java.util.Locale.ROOT);
+        if (lower.contains("%2e") || lower.contains("%2f")
+                || lower.contains("%5c") || lower.contains("%00")) {
+            return null;
+        }
+
+        String cleaned = org.springframework.util.StringUtils.cleanPath(raw);
+        return cleaned.startsWith("/") ? cleaned : "/" + cleaned;
     }
 
     private boolean matchesAny(List<String> allowed, String path) {
