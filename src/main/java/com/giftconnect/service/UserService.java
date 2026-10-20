@@ -27,10 +27,20 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * A valid throwaway BCrypt hash used to burn the same CPU time when the
+     * email does not exist as when a real account's password is compared. This
+     * flattens the login timing difference that would otherwise let an attacker
+     * tell registered emails from unknown ones. Generated once at construction
+     * so the work cost is realistic and no constant hash is committed.
+     */
+    private final String dummyPasswordHash;
+
     @Autowired
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.dummyPasswordHash = passwordEncoder.encode("giftconnect-timing-equalizer");
     }
 
     /**
@@ -111,8 +121,20 @@ public class UserService {
      * one was wrong.
      */
     public Optional<User> authenticate(String email, String rawPassword) {
-        return userRepository.findByEmail(email)
-                .filter(user -> passwordEncoder.matches(rawPassword, user.getPassword()));
+        // Normalize exactly like registration (trim + lowercase) so a login with
+        // different casing/whitespace still finds the account, and look up via the
+        // service method so there is a single normalization rule in one place.
+        Optional<User> found = findByEmail(email);
+
+        if (found.isEmpty()) {
+            // Equalize timing with the wrong-password path: run a real BCrypt
+            // comparison against a throwaway hash so an unknown email takes the
+            // same time as a known email with the wrong password.
+            passwordEncoder.matches(rawPassword == null ? "" : rawPassword, dummyPasswordHash);
+            return Optional.empty();
+        }
+
+        return found.filter(user -> passwordEncoder.matches(rawPassword, user.getPassword()));
     }
 
     public List<User> getAllUsers() {

@@ -7,8 +7,10 @@ import com.giftconnect.entity.User;
 import com.giftconnect.service.ActivityLogService;
 import com.giftconnect.service.EmailService;
 import com.giftconnect.service.OtpService;
+import com.giftconnect.service.RateLimitService;
 import com.giftconnect.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -56,9 +58,20 @@ class AuthControllerRegisterTest {
     @MockitoBean
     private ActivityLogService activityLogService;
 
+    @MockitoBean
+    private RateLimitService rateLimitService;
+
     private static final String VALID_BODY =
             "{\"name\":\"Riya\",\"email\":\"riya@example.com\",\"password\":\"StrongPass1!\","
                     + "\"phone\":\"9999999999\",\"address\":\"Mumbai\"}";
+
+    @BeforeEach
+    void allowAllRequestsThroughTheRateLimiter() {
+        // The limiter is a mock here; default a boolean mock returns false, which
+        // would 429 every call. These tests are about registration behaviour, so
+        // let the rate-limit gate pass and cover throttling in its own tests.
+        when(rateLimitService.tryConsume(anyString())).thenReturn(true);
+    }
 
     private User newUnverifiedUser() {
         User user = new User();

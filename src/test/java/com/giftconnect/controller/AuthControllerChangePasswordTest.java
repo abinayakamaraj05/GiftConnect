@@ -10,6 +10,7 @@ import com.giftconnect.exception.InvalidOperationException;
 import com.giftconnect.service.ActivityLogService;
 import com.giftconnect.service.EmailService;
 import com.giftconnect.service.OtpService;
+import com.giftconnect.service.RateLimitService;
 import com.giftconnect.service.UserService;
 import com.giftconnect.util.TestSessions;
 import jakarta.servlet.http.HttpServletRequest;
@@ -73,6 +74,9 @@ class AuthControllerChangePasswordTest {
 
     @MockitoBean
     private ActivityLogService activityLogService;
+
+    @MockitoBean
+    private RateLimitService rateLimitService;
 
     private static final Long ACTOR_ID = 42L;
     private static final String CURRENT = "OldPass1!";

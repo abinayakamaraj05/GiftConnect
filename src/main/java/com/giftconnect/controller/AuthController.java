@@ -13,7 +13,9 @@ import com.giftconnect.exception.InvalidOperationException;
 import com.giftconnect.service.ActivityLogService;
 import com.giftconnect.service.EmailService;
 import com.giftconnect.service.OtpService;
+import com.giftconnect.service.RateLimitService;
 import com.giftconnect.service.UserService;
+import com.giftconnect.util.IpUtils;
 import com.giftconnect.util.SessionActor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -45,23 +47,38 @@ public class AuthController {
     // Role is always the one loaded from the DB at login — never taken from the request body.
     public static final String SESSION_USER_ROLE = "userRole";
 
+    /**
+     * Neutral registration response returned for EVERY registration attempt —
+     * brand-new email, duplicate, already-verified, or unverified re-registration.
+     * Keeping the body byte-for-byte identical means the response cannot be used
+     * to tell whether an email is already registered (anti-enumeration).
+     */
+    private static final String NEUTRAL_REGISTER_MESSAGE =
+            "If this email is not already verified, a verification code has been sent.";
+
     private final UserService userService;
     private final OtpService otpService;
     private final EmailService emailService;
     private final ActivityLogService activityLogService;
+    private final RateLimitService rateLimitService;
 
     @Autowired
     public AuthController(UserService userService, OtpService otpService, EmailService emailService,
-                          ActivityLogService activityLogService) {
+                          ActivityLogService activityLogService, RateLimitService rateLimitService) {
         this.userService = userService;
         this.otpService = otpService;
         this.emailService = emailService;
         this.activityLogService = activityLogService;
+        this.rateLimitService = rateLimitService;
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request,
                                       HttpServletRequest httpRequest) {
+        if (!rateLimitService.tryConsume(rateLimitKey("register", httpRequest))) {
+            return tooManyRequests();
+        }
+
         // 1) Server-side password strength validation (independent of frontend).
         java.util.List<String> passwordProblems =
                 com.giftconnect.util.PasswordPolicy.violations(request.getPassword());
@@ -83,9 +100,7 @@ public class AuthController {
                 user = userService.registerWithOtp(request);
             } catch (IllegalStateException e) {
                 // Duplicate email — respond with the SAME neutral body as success.
-                return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(
-                        "message", "If this email is not already verified, a verification code has been sent.",
-                        "email", email));
+                return neutralRegisterResponse(email);
             }
             // Phase 4O: a NEW account must actually receive an OTP. Previously
             // this branch returned a "code was sent" message but never generated
@@ -97,9 +112,7 @@ public class AuthController {
             accountCreated = true;
         } else if (user.getEmailVerified()) {
             // Existing verified account: identical neutral response, no email, no OTP churn.
-            return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(
-                    "message", "If this email is not already verified, a verification code has been sent.",
-                    "email", email));
+            return neutralRegisterResponse(email);
         } else {
             // Unverified account re-registering: cooldown-limited OTP re-issue.
             otpService.assertResendAllowed(user);
@@ -116,16 +129,25 @@ public class AuthController {
                     "Account registered (pending email verification)", httpRequest);
         }
 
+        // Identical body for new and existing emails — the caller learns nothing
+        // about whether the address was already registered.
+        return neutralRegisterResponse(email);
+    }
+
+    /** The single neutral 202 registration response used by every register branch. */
+    private ResponseEntity<?> neutralRegisterResponse(String email) {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(
-                "message", accountCreated
-                        ? "Account created. A 6-digit verification code was sent to your email (expires in 10 minutes)."
-                        : "If this email is not already verified, a verification code has been sent.",
+                "message", NEUTRAL_REGISTER_MESSAGE,
                 "email", email));
     }
 
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@Valid @RequestBody OtpVerifyRequest request,
                                        HttpServletRequest httpRequest) {
+        if (!rateLimitService.tryConsume(rateLimitKey("verify-otp", httpRequest))) {
+            return tooManyRequests();
+        }
+
         String email = request.getEmail().trim().toLowerCase();
 
         // Unknown email gets the SAME response as a wrong OTP — no enumeration.
@@ -157,6 +179,10 @@ public class AuthController {
     @PostMapping("/resend-otp")
     public ResponseEntity<?> resendOtp(@Valid @RequestBody ResendOtpRequest request,
                                        HttpServletRequest httpRequest) {
+        if (!rateLimitService.tryConsume(rateLimitKey("resend-otp", httpRequest))) {
+            return tooManyRequests();
+        }
+
         String email = request.getEmail().trim().toLowerCase();
 
         User user = userService.findByEmail(email).orElse(null);
@@ -188,6 +214,10 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        if (!rateLimitService.tryConsume(rateLimitKey("login", httpRequest))) {
+            return tooManyRequests();
+        }
+
         Optional<User> matchedUser = userService.authenticate(request.getEmail(), request.getPassword());
 
         if (matchedUser.isEmpty()) {
@@ -228,10 +258,17 @@ public class AuthController {
                 user.getUserId(), user.getRole(), user.getEmail(), "USER", user.getUserId(),
                 "User logged in", httpRequest);
 
-        // Create a new session (or reuse the current one) and store identity in it.
-        // The role comes from the authenticated User loaded by the backend — the login
-        // request body has no role field, and any role sent by the client is ignored.
+        // Rotate the session id on login to defeat session fixation: any id an
+        // attacker planted pre-authentication is replaced with a fresh one, while
+        // the session object itself is preserved. changeSessionId() is the
+        // Servlet-supported, container-safe way to do this (no manual cookie
+        // handling, no new session race window).
         HttpSession session = httpRequest.getSession(true);
+        httpRequest.changeSessionId();
+
+        // Store identity. The role comes from the authenticated User loaded by
+        // the backend — the login request body has no role field, and any role
+        // sent by the client is ignored.
         session.setAttribute(SESSION_USER_ID, user.getUserId());
         session.setAttribute(SESSION_USER_EMAIL, user.getEmail());
         session.setAttribute(SESSION_USER_ROLE, user.getRole());
@@ -339,6 +376,24 @@ public class AuthController {
             session.invalidate();
         }
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+    }
+
+    /**
+     * Per-IP rate-limit bucket key for an unauthenticated credential endpoint.
+     * The client IP is resolved by {@link IpUtils} (first X-Forwarded-For entry
+     * when behind a trusted proxy, else the socket address); see
+     * {@link RateLimitService} for the trust assumption and the single-instance
+     * limitation.
+     */
+    private String rateLimitKey(String scope, HttpServletRequest request) {
+        String ip = IpUtils.clientIp(request);
+        return scope + ":" + (ip == null ? "unknown" : ip);
+    }
+
+    /** Standard 429 body for a throttled credential endpoint. */
+    private ResponseEntity<?> tooManyRequests() {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of("error", "Too many requests. Please wait a moment and try again."));
     }
 
     /**

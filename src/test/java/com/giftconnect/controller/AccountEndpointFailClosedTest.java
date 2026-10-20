@@ -5,6 +5,7 @@ import com.giftconnect.dto.ProfileUpdateRequest;
 import com.giftconnect.service.ActivityLogService;
 import com.giftconnect.service.EmailService;
 import com.giftconnect.service.OtpService;
+import com.giftconnect.service.RateLimitService;
 import com.giftconnect.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,7 @@ class AccountEndpointFailClosedTest {
     private final ActivityLogService activityLogService = mock(ActivityLogService.class);
     private final OtpService otpService = mock(OtpService.class);
     private final EmailService emailService = mock(EmailService.class);
+    private final RateLimitService rateLimitService = mock(RateLimitService.class);
 
     /** A request with no HTTP session at all — i.e. an anonymous caller. */
     private HttpServletRequest anonymousRequest() {
@@ -82,7 +84,8 @@ class AccountEndpointFailClosedTest {
 
     @Test
     void changePassword_withoutASession_is401_andNeverRotatesCredentials() {
-        AuthController controller = new AuthController(userService, otpService, emailService, activityLogService);
+        AuthController controller = new AuthController(
+                userService, otpService, emailService, activityLogService, rateLimitService);
 
         ChangePasswordRequest body = new ChangePasswordRequest();
         body.setCurrentPassword("StolenPass1!");
