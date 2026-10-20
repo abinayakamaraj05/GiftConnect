@@ -120,7 +120,7 @@ mvn spring-boot:run
 or run the packaged jar:
 
 ```bash
-java -jar target/GiftConnect-0.0.1-SNAPSHOT.jar
+java -jar target/giftconnect-0.0.1-SNAPSHOT.jar
 ```
 
 **Application port:** the configured port is **`server.port=8080`** (verified in
