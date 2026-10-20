@@ -60,6 +60,11 @@ class OrderServiceAuthTest {
     private ActivityLogService activityLogService;
     @Mock
     private OrderIdempotencyRepository orderIdempotencyRepository;
+    // New dependency for scheduled delivery. These tests never send a delivery
+    // date, so the scheduling branch is skipped and this mock is never invoked —
+    // it exists only to satisfy OrderService's constructor.
+    @Mock
+    private DeliveryPolicy deliveryPolicy;
 
     @InjectMocks
     private OrderService orderService;

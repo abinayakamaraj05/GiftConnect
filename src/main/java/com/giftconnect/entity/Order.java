@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +50,42 @@ public class Order {
 
     @Column(name = "shipping_address", length = 500)
     private String shippingAddress;
+
+    /**
+     * Signature feature — the date the customer REQUESTED delivery for. Null on
+     * an ordinary (non-scheduled) order. Always validated server-side against the
+     * seven-calendar-day advance rule (see DeliveryPolicy).
+     */
+    @Column(name = "requested_delivery_date")
+    private LocalDate requestedDeliveryDate;
+
+    /**
+     * The requested delivery time-slot code (e.g. "09:00-12:00"). Null unless the
+     * order is scheduled. A PREFERRED window, stored exactly as the stable
+     * DeliverySlot code so it never drifts with display text.
+     */
+    @Column(name = "requested_time_slot", length = 20)
+    private String requestedTimeSlot;
+
+    /** Recipient's name for a gift order (may differ from the ordering customer). */
+    @Column(name = "recipient_name", length = 100)
+    private String recipientName;
+
+    /** Optional personal message to include with the gift. */
+    @Column(name = "gift_message", length = 500)
+    private String giftMessage;
+
+    /** IANA zone the delivery date was chosen in (e.g. "Asia/Kolkata"). */
+    @Column(name = "delivery_timezone", length = 40)
+    private String deliveryTimezone;
+
+    /**
+     * When the order was ACTUALLY delivered. Set only when an admin/operator moves
+     * the order to DELIVERED — never derived from the requested date, so a passed
+     * scheduled time is never mistaken for a completed delivery.
+     */
+    @Column(name = "actual_delivery_date")
+    private LocalDateTime actualDeliveryDate;
 
     @JsonIgnore
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -118,6 +155,54 @@ public class Order {
 
     public void setShippingAddress(String shippingAddress) {
         this.shippingAddress = shippingAddress;
+    }
+
+    public LocalDate getRequestedDeliveryDate() {
+        return requestedDeliveryDate;
+    }
+
+    public void setRequestedDeliveryDate(LocalDate requestedDeliveryDate) {
+        this.requestedDeliveryDate = requestedDeliveryDate;
+    }
+
+    public String getRequestedTimeSlot() {
+        return requestedTimeSlot;
+    }
+
+    public void setRequestedTimeSlot(String requestedTimeSlot) {
+        this.requestedTimeSlot = requestedTimeSlot;
+    }
+
+    public String getRecipientName() {
+        return recipientName;
+    }
+
+    public void setRecipientName(String recipientName) {
+        this.recipientName = recipientName;
+    }
+
+    public String getGiftMessage() {
+        return giftMessage;
+    }
+
+    public void setGiftMessage(String giftMessage) {
+        this.giftMessage = giftMessage;
+    }
+
+    public String getDeliveryTimezone() {
+        return deliveryTimezone;
+    }
+
+    public void setDeliveryTimezone(String deliveryTimezone) {
+        this.deliveryTimezone = deliveryTimezone;
+    }
+
+    public LocalDateTime getActualDeliveryDate() {
+        return actualDeliveryDate;
+    }
+
+    public void setActualDeliveryDate(LocalDateTime actualDeliveryDate) {
+        this.actualDeliveryDate = actualDeliveryDate;
     }
 
     public List<OrderItem> getOrderItems() {

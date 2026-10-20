@@ -234,9 +234,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             `;
 
+        const scheduleLine = order.requestedDeliveryDate
+            ? `<p>Scheduled delivery: <strong>${escapeHtml(order.requestedDeliveryDate)}</strong>` +
+              `${order.requestedTimeSlot ? ' · ' + escapeHtml(order.requestedTimeSlot) : ''}` +
+              `${order.deliveryTimezone ? ' (' + escapeHtml(order.deliveryTimezone) + ')' : ''}</p>`
+            : '';
+        const messageLine = order.giftMessage
+            ? `<p>Gift message: “${escapeHtml(order.giftMessage)}”</p>`
+            : '';
+
         detailContent.innerHTML = `
             <p><strong>Order #${order.orderId}</strong> — placed ${new Date(order.orderDate).toLocaleString()}</p>
             <p>Shipping to: ${escapeHtml(order.shippingAddress || '—')}</p>
+            ${scheduleLine}
+            ${messageLine}
             <table class="data-table" style="margin:1rem 0;">
                 <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr></thead>
                 <tbody>${itemsRows}</tbody>

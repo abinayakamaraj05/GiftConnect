@@ -19,6 +19,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const reviewTotal = document.getElementById('reviewTotal');
     const simulateFailureBox = document.getElementById('simulateFailure');
 
+    // Optional scheduled-delivery (signature feature) controls.
+    const scheduleToggle = document.getElementById('scheduleToggle');
+    const scheduleFields = document.getElementById('scheduleFields');
+    const deliveryDateInput = document.getElementById('deliveryDate');
+    const deliverySlotSelect = document.getElementById('deliverySlot');
+    const scheduleHint = document.getElementById('scheduleHint');
+    const giftMessageInput = document.getElementById('giftMessage');
+    let deliveryOptions = null;
+
     const fields = {
         fullName: document.getElementById('fullName'),
         phone: document.getElementById('phone'),
@@ -101,6 +110,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     layout.style.display = 'block';
 
+    // ----- Optional gift scheduling (signature feature) -----
+    // The picker is a CONVENIENCE only: the server re-validates the seven-calendar-
+    // day rule and the slot on submit, so a tampered or stale date is still
+    // rejected. If the metadata can't be loaded, the whole section is hidden rather
+    // than letting the customer pick a date the server might refuse.
+    try {
+        deliveryOptions = await apiRequest('/api/delivery/options');
+        deliverySlotSelect.innerHTML = deliveryOptions.slots
+            .map(s => `<option value="${CartUI.escapeAttr(s.code)}">${CartUI.escapeHtml(s.label)}</option>`)
+            .join('');
+        if (deliveryDateInput && deliveryOptions.earliestEligibleDate) {
+            deliveryDateInput.min = deliveryOptions.earliestEligibleDate;
+            scheduleHint.textContent =
+                `Earliest available: ${deliveryOptions.earliestEligibleDate} (${deliveryOptions.timezone}); ` +
+                `at least ${deliveryOptions.minAdvanceCalendarDays} days' notice required.`;
+        }
+    } catch (err) {
+        const section = scheduleToggle.closest('.checkout-section');
+        if (section) section.style.display = 'none';
+    }
+
+    scheduleToggle.addEventListener('change', () => {
+        const on = scheduleToggle.checked;
+        scheduleFields.style.display = on ? 'block' : 'none';
+        if (!on) {
+            deliveryDateInput.value = '';
+            deliverySlotSelect.selectedIndex = 0;
+        }
+    });
+
     // ----- Helpers -----
     function readFields() {
         return {
@@ -163,12 +202,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             : `<p class="cart-notice error">Payment is still pending. ${CartUI.escapeHtml(paymentError || '')}
                    Open <a href="orders.html">My orders</a> and use Pay Now to try again.</p>`;
 
+        const scheduleNote = order.requestedDeliveryDate
+            ? `<p>Scheduled delivery: <strong>${CartUI.escapeHtml(order.requestedDeliveryDate)}</strong>
+                   ${order.requestedTimeSlot ? '· ' + CartUI.escapeHtml(order.requestedTimeSlot) : ''}
+                   ${order.deliveryTimezone ? '(' + CartUI.escapeHtml(order.deliveryTimezone) + ')' : ''}</p>`
+            : '';
+        const messageNote = order.giftMessage
+            ? `<p>Gift message: “${CartUI.escapeHtml(order.giftMessage)}”</p>`
+            : '';
+
         confirmation.innerHTML = `
             <div class="confirmation-box">
                 <h2>Order #${order.orderId} placed</h2>
                 <p>Placed ${new Date(order.orderDate).toLocaleString()} · Status: ${CartUI.escapeHtml(order.status)}
                    · Payment: ${CartUI.escapeHtml(order.paymentStatus)}</p>
                 <p>Delivering to: ${CartUI.escapeHtml(order.shippingAddress || '—')}</p>
+                ${scheduleNote}
+                ${messageNote}
                 <table class="data-table" style="margin:1rem 0;">
                     <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr></thead>
                     <tbody>${itemsRows}</tbody>
@@ -200,6 +250,39 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        // Scheduled delivery is optional; when chosen, both a date and a slot are
+        // required and the date must respect the minimum advance notice. This is a
+        // fast client-side check only — DeliveryPolicy enforces the real rule.
+        const scheduleBody = {};
+        if (scheduleToggle.checked) {
+            const dateValue = deliveryDateInput.value;
+            const slotValue = deliverySlotSelect.value;
+            if (!dateValue) {
+                showError('Choose a delivery date, or untick scheduled delivery.');
+                return;
+            }
+            if (!slotValue) {
+                showError('Choose a preferred delivery time slot.');
+                return;
+            }
+            if (deliveryOptions && deliveryOptions.earliestEligibleDate
+                    && dateValue < deliveryOptions.earliestEligibleDate) {
+                showError(`Scheduled delivery needs at least ${deliveryOptions.minAdvanceCalendarDays} ` +
+                    `days' notice. Earliest available: ${deliveryOptions.earliestEligibleDate}.`);
+                return;
+            }
+            scheduleBody.deliveryDate = dateValue;
+            scheduleBody.deliverySlot = slotValue;
+        }
+        const giftMessage = giftMessageInput.value.trim();
+        if (giftMessage) {
+            scheduleBody.giftMessage = giftMessage;
+        }
+        // The gift recipient is the person the order is addressed to.
+        if (values.fullName) {
+            scheduleBody.recipientName = values.fullName;
+        }
+
         const selected = form.querySelector('input[name="paymentMethod"]:checked');
         if (!selected) {
             showError('Select a payment method.');
@@ -224,7 +307,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     items: lines.map(l => ({
                         productId: l.product.productId,
                         quantity: l.quantity
-                    }))
+                    })),
+                    ...scheduleBody
                 })
             });
         } catch (err) {

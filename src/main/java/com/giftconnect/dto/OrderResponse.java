@@ -4,6 +4,7 @@ import com.giftconnect.entity.Order;
 import com.giftconnect.entity.OrderStatus;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,6 +21,14 @@ public class OrderResponse {
     private String shippingAddress;
     private List<OrderItemResponse> items;
 
+    // Signature feature — scheduled-delivery fields (all null on a non-scheduled order).
+    private LocalDate requestedDeliveryDate;
+    private String requestedTimeSlot;
+    private String deliveryTimezone;
+    private String recipientName;
+    private String giftMessage;
+    private LocalDateTime actualDeliveryDate;
+
     public static OrderResponse fromEntity(Order order) {
         OrderResponse response = new OrderResponse();
         response.orderId = order.getOrderId();
@@ -33,6 +42,12 @@ public class OrderResponse {
         response.items = order.getOrderItems().stream()
                 .map(OrderItemResponse::fromEntity)
                 .toList();
+        response.requestedDeliveryDate = order.getRequestedDeliveryDate();
+        response.requestedTimeSlot = order.getRequestedTimeSlot();
+        response.deliveryTimezone = order.getDeliveryTimezone();
+        response.recipientName = order.getRecipientName();
+        response.giftMessage = order.getGiftMessage();
+        response.actualDeliveryDate = order.getActualDeliveryDate();
         return response;
     }
 
@@ -70,5 +85,29 @@ public class OrderResponse {
 
     public List<OrderItemResponse> getItems() {
         return items;
+    }
+
+    public LocalDate getRequestedDeliveryDate() {
+        return requestedDeliveryDate;
+    }
+
+    public String getRequestedTimeSlot() {
+        return requestedTimeSlot;
+    }
+
+    public String getDeliveryTimezone() {
+        return deliveryTimezone;
+    }
+
+    public String getRecipientName() {
+        return recipientName;
+    }
+
+    public String getGiftMessage() {
+        return giftMessage;
+    }
+
+    public LocalDateTime getActualDeliveryDate() {
+        return actualDeliveryDate;
     }
 }

@@ -78,7 +78,34 @@
                 </section>
 
                 <section class="checkout-section">
-                    <h2>2. Review your order</h2>
+                    <h2>2. Schedule your gift (optional)</h2>
+                    <label class="demo-option">
+                        <input type="checkbox" id="scheduleToggle"> Deliver this gift on a special day
+                    </label>
+
+                    <div id="scheduleFields" style="display:none; margin-top:0.75rem;">
+                        <div class="form-grid">
+                            <div class="field">
+                                <label for="deliveryDate">Delivery date</label>
+                                <input type="date" id="deliveryDate">
+                            </div>
+                            <div class="field">
+                                <label for="deliverySlot">Preferred time slot</label>
+                                <select id="deliverySlot"></select>
+                            </div>
+                        </div>
+                        <p id="scheduleHint" style="font-size:0.85rem; color:#666; margin:0.25rem 0 0;"></p>
+                    </div>
+
+                    <div class="field full" style="margin-top:0.75rem;">
+                        <label for="giftMessage">Gift message (optional)</label>
+                        <textarea id="giftMessage" maxlength="500" rows="2"
+                                  placeholder="A short note to include with the gift"></textarea>
+                    </div>
+                </section>
+
+                <section class="checkout-section">
+                    <h2>3. Review your order</h2>
                     <table class="data-table">
                         <thead>
                             <tr><th>Product</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr>
@@ -89,7 +116,7 @@
                 </section>
 
                 <section class="checkout-section">
-                    <h2>3. Payment method</h2>
+                    <h2>4. Payment method</h2>
                     <div class="payment-options">
                         <label class="payment-option">
                             <input type="radio" name="paymentMethod" value="UPI" checked> UPI

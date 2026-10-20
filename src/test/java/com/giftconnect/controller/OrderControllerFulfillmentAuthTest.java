@@ -9,6 +9,7 @@ import com.giftconnect.repository.OrderRepository;
 import com.giftconnect.repository.ProductRepository;
 import com.giftconnect.repository.UserRepository;
 import com.giftconnect.service.ActivityLogService;
+import com.giftconnect.service.DeliveryPolicy;
 import com.giftconnect.service.OrderService;
 import com.giftconnect.service.UserService;
 import com.giftconnect.util.TestSessions;
@@ -57,6 +58,12 @@ class OrderControllerFulfillmentAuthTest {
     private ActivityLogService activityLogService;
     @MockitoBean
     private OrderIdempotencyRepository orderIdempotencyRepository;
+
+    // The real OrderService is @Import-ed here, so its new scheduled-delivery
+    // dependency must be present. Mocked (never invoked by these fulfillment
+    // tests); the seven-day rule is covered in DeliveryPolicyTest.
+    @MockitoBean
+    private DeliveryPolicy deliveryPolicy;
 
     @MockitoBean
     private UserService userService;

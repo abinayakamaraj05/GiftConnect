@@ -39,6 +39,7 @@ public class OrderService {
     private final UserRepository userRepository;
     private final OrderIdempotencyRepository orderIdempotencyRepository;
     private final ActivityLogService activityLogService;
+    private final DeliveryPolicy deliveryPolicy;
 
     /** Orders in these states can no longer be changed or cancelled. */
     private static final Set<OrderStatus> LOCKED_STATUSES = Set.of(OrderStatus.DELIVERED, OrderStatus.CANCELLED);
@@ -70,12 +71,14 @@ public class OrderService {
                          ProductRepository productRepository,
                          UserRepository userRepository,
                          OrderIdempotencyRepository orderIdempotencyRepository,
-                         ActivityLogService activityLogService) {
+                         ActivityLogService activityLogService,
+                         DeliveryPolicy deliveryPolicy) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.orderIdempotencyRepository = orderIdempotencyRepository;
         this.activityLogService = activityLogService;
+        this.deliveryPolicy = deliveryPolicy;
     }
 
     /**
@@ -132,11 +135,32 @@ public class OrderService {
             }
         }
 
+        // Signature feature — validate the requested delivery schedule up front,
+        // before any product row is locked. A missing/unknown slot or a date that
+        // breaks the seven-calendar-day rule is rejected here (400) and nothing
+        // is written. The front-end date picker is NEVER trusted as the guard.
+        boolean scheduleRequested = request.getDeliveryDate() != null
+                || (request.getDeliverySlot() != null && !request.getDeliverySlot().isBlank());
+        DeliverySlot resolvedSlot = scheduleRequested
+                ? deliveryPolicy.validateAndResolveSlot(request.getDeliveryDate(), request.getDeliverySlot())
+                : null;
+
         Order order = new Order();
         order.setUser(user);
         order.setShippingAddress(request.getShippingAddress());
         order.setStatus(OrderStatus.PENDING);
         order.setPaymentStatus("PENDING");
+        if (scheduleRequested) {
+            order.setRequestedDeliveryDate(request.getDeliveryDate());
+            order.setRequestedTimeSlot(resolvedSlot.getCode());
+            order.setDeliveryTimezone(deliveryPolicy.timeZoneId());
+        }
+        if (request.getRecipientName() != null && !request.getRecipientName().isBlank()) {
+            order.setRecipientName(request.getRecipientName().trim());
+        }
+        if (request.getGiftMessage() != null && !request.getGiftMessage().isBlank()) {
+            order.setGiftMessage(request.getGiftMessage().trim());
+        }
 
         List<OrderItemRequest> items = request.getItems();
 
@@ -296,6 +320,12 @@ public class OrderService {
         OrderStatus newStatus = parseStatus(statusValue);
         validateTransition(previousStatus, newStatus);
         order.setStatus(newStatus);
+        // Record the genuine delivery moment only when the operator actually moves
+        // the order to DELIVERED — never derived from the requested date, so a
+        // passed scheduled time is not mistaken for a completed delivery.
+        if (newStatus == OrderStatus.DELIVERED) {
+            order.setActualDeliveryDate(deliveryPolicy.now());
+        }
         Order saved = orderRepository.save(order);
         // Audit the ACTING user (resolved from the session) rather than the order's
         // owner. The order and its owner stay identifiable through entityType/entityId.
